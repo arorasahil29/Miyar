@@ -1,0 +1,25 @@
+# Runs Basira (static web app) and Basira Gateway (live data connections) as two containers.
+#   export BASIRA_GATEWAY_KEY=$(openssl rand -hex 24)
+#   docker compose up -d --build
+services:
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+    restart: unless-stopped
+
+  gateway:
+    build: ./gateway
+    ports:
+      - "8787:8787"
+    environment:
+      BASIRA_GATEWAY_KEY: ${BASIRA_GATEWAY_KEY:?Set BASIRA_GATEWAY_KEY first}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
+    env_file:
+      - path: ./gateway/.env
+        required: false
+    volumes:
+      - ./gateway/connections.json:/app/connections.json:ro
+    restart: unless-stopped

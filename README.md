@@ -17,9 +17,20 @@ It needs an internet connection the first time, to load these libraries from cdn
 
 - Import Excel, PDF tables, CSV/TSV, JSON and HTML tables, with a preview before loading
 - 27 visual types: charts, KPI cards, tables, matrix, slicers, gauges, Sankey diagrams, calendar heatmaps and more
+- Live data sources through **Basira Gateway**: SAP HANA, SAP S/4HANA and BW (OData), Oracle, Databricks, Snowflake, BigQuery, SQL Server, Azure Synapse, PostgreSQL, Redshift, MySQL and OData feeds. See [gateway/README.md](gateway/README.md)
 - Cross-filtering, drill-down hierarchies, drill-through detail pages, calculated fields
 - Multiple reports and pages, undo/redo/reset, light and dark themes, phone layout
 - Export to PDF and Excel
+
+## Run with Docker (app and gateway)
+
+```bash
+cp gateway/connections.example.json gateway/connections.json   # then edit it
+export BASIRA_GATEWAY_KEY=$(openssl rand -hex 24)
+docker compose up -d --build
+```
+
+Basira runs at http://localhost:8080 and the gateway at http://localhost:8787. The same two containers run on any cloud that runs containers: AWS ECS or App Runner, Azure Container Apps, Google Cloud Run, or Kubernetes.
 
 ## Where data is kept
 

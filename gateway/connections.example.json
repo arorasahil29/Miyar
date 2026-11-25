@@ -1,0 +1,19 @@
+{
+  "connections": [
+    { "name": "SAP HANA – Finance", "type": "saphana", "host": "xxxx.hana.prod-eu10.hanacloud.ondemand.com", "port": 443,
+      "user": "${HANA_USER}", "password": "${HANA_PASSWORD}", "schema": "FINANCE" },
+    { "name": "SAP S/4HANA – Sales orders", "type": "odata", "url": "https://my-s4.example.com/sap/opu/odata/sap/API_SALES_ORDER_SRV",
+      "user": "${S4_USER}", "password": "${S4_PASSWORD}", "client": "100" },
+    { "name": "Oracle – ERP", "type": "oracle", "user": "${ORACLE_USER}", "password": "${ORACLE_PASSWORD}", "connectString": "erp-db.example.com:1521/ERPPDB" },
+    { "name": "Databricks – Lakehouse", "type": "databricks", "host": "adb-1234567890123456.7.azuredatabricks.net",
+      "path": "/sql/1.0/warehouses/abcdef1234567890", "token": "${DATABRICKS_TOKEN}", "catalog": "main", "schema": "sales" },
+    { "name": "Snowflake – Analytics", "type": "snowflake", "account": "xy12345.eu-west-1", "username": "${SNOWFLAKE_USER}", "password": "${SNOWFLAKE_PASSWORD}",
+      "warehouse": "COMPUTE_WH", "database": "ANALYTICS", "schema": "PUBLIC", "role": "REPORTING" },
+    { "name": "BigQuery – Marketing", "type": "bigquery", "projectId": "my-project", "keyFilename": "/secrets/bigquery-service-account.json", "location": "EU" },
+    { "name": "SQL Server – Operations", "type": "sqlserver", "server": "ops.database.windows.net", "database": "ops", "user": "${MSSQL_USER}", "password": "${MSSQL_PASSWORD}" },
+    { "name": "PostgreSQL – Warehouse", "type": "postgres", "host": "pg.example.com", "port": 5432, "database": "dw", "user": "${PG_USER}", "password": "${PG_PASSWORD}", "ssl": true },
+    { "name": "Redshift – Events", "type": "redshift", "host": "my-cluster.abc123.eu-west-1.redshift.amazonaws.com", "port": 5439, "database": "events", "user": "${RS_USER}", "password": "${RS_PASSWORD}", "ssl": true },
+    { "name": "MySQL – Shop", "type": "mysql", "host": "mysql.example.com", "port": 3306, "database": "shop", "user": "${MYSQL_USER}", "password": "${MYSQL_PASSWORD}" },
+    { "name": "SQLite – Local file", "type": "sqlite", "file": "/data/sales.db" }
+  ]
+}

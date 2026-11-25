@@ -1,0 +1,4 @@
+node_modules/
+gateway/connections.json
+gateway/.env
+*.db
