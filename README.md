@@ -4,7 +4,7 @@
 
 A self-service business intelligence app that runs entirely in the browser. It's a single HTML file, with no server, no build step and no account.
 
-**Live app:** https://arorasahil29.github.io/basira/
+**Live app:** https://arorasahil29.github.io/Basira/
 
 ## Run it
 
