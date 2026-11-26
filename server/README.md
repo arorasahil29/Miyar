@@ -5,6 +5,7 @@ The server turns Miyar from a single-person browser app into a shared tool for a
 - **Sign-in with any OpenID Connect provider**: Microsoft Entra ID (Office 365), Google Workspace, Okta, Keycloak, Auth0, Ping, OneLogin and others.
 - **Shared reports and datasets.** Report definitions and dataset details live in PostgreSQL; dataset rows are stored as compressed files on a disk volume or in S3-compatible storage.
 - **Roles.** Viewers open, filter and export reports. Editors also build reports and import or connect data. Admins also manage users and see the activity log.
+- **Playgrounds.** *My playground* holds saved work only its owner can see; *Shared playground* holds work everyone in the organisation can open. Only the person who saved an item changes it (administrators may also delete shared items).
 - **Activity log** of sign-ins, report and dataset changes, role changes and data-source queries.
 - **Live data through Miyar Gateway**, called by the server so nobody's browser holds the gateway key.
 
@@ -105,6 +106,8 @@ All endpoints are under `<PUBLIC_URL>/api` and use the session cookie. Requests 
 | PATCH | `/datasets/:id` | editor |
 | DELETE | `/datasets/:id`, `/reports/:id` | editor |
 | GET/POST | `/gateway/connections`, `/gateway/tables`, `/gateway/query` | editor |
+| GET | `/playground?folder=mine\|shared`, `/playground/:id` | viewer (own items, or shared) |
+| PUT, DELETE | `/playground/:id` | the item's owner (admins may delete shared items) |
 | GET | `/users`, `/audit` | admin |
 | PATCH | `/users/:id` | admin |
 

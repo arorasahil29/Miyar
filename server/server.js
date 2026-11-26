@@ -79,6 +79,13 @@ async function migrate(){
       await c.query('COMMIT');
       console.log('[db] schema created (version 1)');
     }
+    if ((rows[0].v || 1) < 2){
+      await c.query('BEGIN');
+      await c.query(fs.readFileSync(path.join(__dirname, 'schema-2.sql'), 'utf8'));
+      await c.query('INSERT INTO schema_version (version) VALUES (2)');
+      await c.query('COMMIT');
+      console.log('[db] schema upgraded to version 2 (playgrounds)');
+    }
     const org = await c.query('SELECT * FROM orgs WHERE slug = $1', [CFG.orgSlug]);
     if (org.rows.length){
       ORG = org.rows[0];
@@ -460,6 +467,63 @@ api.delete('/reports/:id', need('editor'), async (req, res, next) => {
     const row = (await db('DELETE FROM reports WHERE org_id = $1 AND id = $2 RETURNING id, name', [ORG.id, req.params.id])).rows[0];
     if (!row) throw new HttpError(404, 'Report not found.');
     await audit(req, 'report.delete', {type: 'report', id: row.id, name: row.name});
+    res.json({ok: true});
+  } catch (e){ next(e); }
+});
+
+/* playgrounds: "mine" is visible only to its owner; "shared" is visible to everyone signed in.
+   Only the owner changes or deletes an item (administrators may also remove shared items). */
+const pgOut = (r, me) => ({id: r.id, folder: r.folder, name: r.name, pages: r.pages, rows: r.rows, updated_at: r.updated_at,
+  owner_id: r.owner_id, owner_name: r.owner_name || null, mine: r.owner_id === me.id, can_edit: r.owner_id === me.id || (r.folder === 'shared' && me.role === 'admin')});
+async function pgItem(id){
+  if (!/^[0-9a-f-]{36}$/i.test(String(id))) throw new HttpError(400, 'Bad item id.');
+  return (await db('SELECT * FROM playground_items WHERE org_id = $1 AND id = $2', [ORG.id, id])).rows[0];
+}
+api.get('/playground', need('viewer'), async (req, res, next) => {
+  try {
+    const folder = req.query.folder === 'shared' ? 'shared' : 'mine';
+    const {rows} = await db(`SELECT p.*, u.name AS owner_name FROM playground_items p LEFT JOIN users u ON u.id = p.owner_id
+      WHERE p.org_id = $1 AND p.folder = $2 AND (p.folder = 'shared' OR p.owner_id = $3) ORDER BY p.updated_at DESC`, [ORG.id, folder, req.user.id]);
+    res.json({items: rows.map(r => pgOut(r, req.user))});
+  } catch (e){ next(e); }
+});
+api.get('/playground/:id', need('viewer'), async (req, res, next) => {
+  try {
+    const it = await pgItem(req.params.id);
+    if (!it || (it.folder === 'mine' && it.owner_id !== req.user.id)) throw new HttpError(404, 'Saved item not found.');
+    const body = await storage.get(it.storage_key);
+    res.setHeader('Content-Type', 'application/json'); res.setHeader('Content-Encoding', 'gzip'); res.setHeader('Cache-Control', 'private, no-store');
+    body.on('error', e => { console.error('[storage]', e.message); res.destroy(e); });
+    body.pipe(res);
+  } catch (e){ next(e); }
+});
+api.put('/playground/:id', need('viewer'), large, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const folder = b.folder === 'shared' ? 'shared' : 'mine';
+    const name = String(b.name || '').trim().slice(0, 120) || 'Untitled report';
+    if (!b.payload || !Array.isArray(b.payload?.report?.pages)) throw new HttpError(400, 'The saved report is missing its pages.');
+    const cur = await pgItem(req.params.id);
+    if (cur && cur.owner_id !== req.user.id) throw new HttpError(cur.folder === 'mine' ? 404 : 403, cur.folder === 'mine' ? 'Saved item not found.' : 'Only the person who saved this can change it. Save a copy instead.');
+    const key = `${ORG.id}/playground/${req.params.id}-${Date.now()}.json.gz`;
+    await storage.put(key, await gzip(JSON.stringify(b.payload)));
+    const vals = [folder, name, Number(b.pages) || 0, Number(b.rows) || 0, key];
+    const row = cur
+      ? (await db('UPDATE playground_items SET folder = $1, name = $2, pages = $3, rows = $4, storage_key = $5, updated_at = now() WHERE id = $6 RETURNING *', [...vals, cur.id])).rows[0]
+      : (await db('INSERT INTO playground_items (id, org_id, owner_id, folder, name, pages, rows, storage_key) VALUES ($6,$7,$8,$1,$2,$3,$4,$5) RETURNING *', [...vals, req.params.id, ORG.id, req.user.id])).rows[0];
+    if (cur?.storage_key) await storage.del(cur.storage_key);
+    await audit(req, cur ? 'playground.update' : 'playground.save', {type: 'playground', id: row.id, name}, {folder});
+    res.json(pgOut(row, req.user));
+  } catch (e){ next(e); }
+});
+api.delete('/playground/:id', need('viewer'), async (req, res, next) => {
+  try {
+    const it = await pgItem(req.params.id);
+    if (!it || (it.folder === 'mine' && it.owner_id !== req.user.id)) throw new HttpError(404, 'Saved item not found.');
+    if (it.owner_id !== req.user.id && req.user.role !== 'admin') throw new HttpError(403, 'Only the person who saved this, or an administrator, can delete it.');
+    await db('DELETE FROM playground_items WHERE id = $1', [it.id]);
+    await storage.del(it.storage_key);
+    await audit(req, 'playground.delete', {type: 'playground', id: it.id, name: it.name}, {folder: it.folder});
     res.json({ok: true});
   } catch (e){ next(e); }
 });

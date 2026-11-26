@@ -3,7 +3,7 @@ FROM node:22-slim
 WORKDIR /app
 COPY server/package.json ./
 RUN npm install --omit=dev --no-audit --no-fund && npm cache clean --force
-COPY server/server.js server/schema.sql ./
+COPY server/server.js server/schema.sql server/schema-2.sql ./
 COPY index.html ./public/index.html
 RUN mkdir -p /data && chown node:node /data
 ENV PORT=8080 NODE_ENV=production DATA_DIR=/data

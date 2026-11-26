@@ -334,6 +334,23 @@ pre.snip{font-family:var(--f-data);font-size:12px;background:var(--raise);border
 .chat-f .row{display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
 .chat-f label{display:flex;gap:6px;align-items:center;color:var(--ink2);font-size:12px}
 .chat-f .note{color:var(--ink3);font-size:11px}
+/* playgrounds */
+.pg-intro{display:flex;gap:10px;align-items:flex-start;background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px}
+.pg-intro svg{width:20px;height:20px;flex:none;color:var(--accent);margin-top:1px}
+.pg-intro p{margin:0;color:var(--ink2);line-height:1.5}
+.pg-save{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.pg-save input{flex:1 1 220px;min-width:0;padding:7px 10px;border:1px solid var(--line2);border-radius:7px;background:var(--panel)}
+.pg-list{display:flex;flex-direction:column;gap:8px}
+.pg-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}
+.pg-item.cur{border-color:var(--accent);background:var(--accent-soft)}
+.pg-ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--raise);border:1px solid var(--line);color:var(--accent)}
+.pg-ic svg{width:18px;height:18px}
+.pg-item b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pg-item small{display:block;color:var(--ink3);font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pg-item .acts{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.pg-empty{text-align:center;color:var(--ink3);padding:28px 12px;border:1.5px dashed var(--line2);border-radius:10px}
+.dtabs .tab svg{width:13px;height:13px;vertical-align:-2px;margin-right:4px}
+@media (max-width:640px){.pg-item{grid-template-columns:auto minmax(0,1fr)}.pg-item .acts{grid-column:1/-1;justify-content:flex-start}}
 /* highlights ticker */
 .ticker{display:flex;align-items:stretch;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;min-height:34px;font-size:12.5px;flex:none}
 .tk-badge{flex:none;display:flex;align-items:center;gap:7px;padding:0 12px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
@@ -496,6 +513,7 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
       </div>
       <button class="btn only-narrow" id="btnFields" type="button">Fields</button>
       <button class="btn ask" id="btnAsk" type="button" title="Ask questions about your data in English or Arabic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/><path d="M5.5 6.5h5M5.5 8.5h3"/></svg><span class="lbl-txt">Ask</span></button>
+      <button class="btn" id="btnPlay" type="button" title="Playgrounds: save and open your work"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3l1.5 1.6h5.5c.7 0 1.2.5 1.2 1.2v6.5c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg><span class="lbl-txt">Playground</span></button>
       <button class="btn" id="btnData" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg><span class="lbl-txt">Data</span></button>
       <button class="btn" id="btnAuto" type="button" title="Generate a starter page from the active dataset"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l1.6 3.9 3.9 1.6-3.9 1.6L8 12.5 6.4 8.6 2.5 7l3.9-1.6z"/></svg><span class="lbl-txt">Auto-build</span></button>
       <button class="btn" id="btnReport" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1.5h5.5L13 5v9.5H4z M9.5 1.5V5H13"/></svg><span class="lbl-txt">Report</span></button>
@@ -2337,13 +2355,14 @@ function openSheet(){
     <h4>Edit</h4><div class="g">${it('undo', 'Undo', 'undo', HIST.i <= 0 ? 'disabled' : '')}${it('redo', 'Redo', 'redo', HIST.i >= HIST.stack.length - 1 ? 'disabled' : '')}${it('reset', sheetResetArmed ? 'Tap again to reset' : 'Reset report', 'reset', (canReset ? '' : 'disabled') + (sheetResetArmed ? ' class="it warn"' : ''))}</div>
     <h4>Data</h4><div class="g">${it('data', 'View data', 'data')}${it('import', 'Import file', 'import')}${it('auto', 'Auto-build page', 'auto')}</div>
     ${SRV.on ? `<h4>Account · ${esc(SRV.me.name || SRV.me.email || '')}</h4><div class="g">${SRV.me.role === 'admin' ? it('users', 'Users & roles', 'user') + it('audit', 'Activity log', 'file') : ''}${it('signout', 'Sign out', 'logout')}</div>` : ''}
-    <h4>Report</h4><div class="g">${it('reports', 'Switch report', 'reports')}${it('rename', 'Rename page', 'rename')}${it('addpage', 'Add page', 'page')}${it('export', 'Export PDF / Excel', 'export')}${it('file', 'Report file', 'file')}${it('ticker', TICK.on ? 'Hide highlights' : 'Show highlights', 'reports')}${it('theme', 'Theme: ' + {auto: 'Auto', light: 'Light', dark: 'Dark'}[themePref], 'theme')}</div></div>`;
+    <h4>Report</h4><div class="g">${it('reports', 'Switch report', 'reports')}${it('rename', 'Rename page', 'rename')}${it('addpage', 'Add page', 'page')}${it('export', 'Export PDF / Excel', 'export')}${it('file', 'Report file', 'file')}${it('play', 'Playgrounds', 'reports')}${it('ticker', TICK.on ? 'Hide highlights' : 'Show highlights', 'reports')}${it('theme', 'Theme: ' + {auto: 'Auto', light: 'Light', dark: 'Dark'}[themePref], 'theme')}</div></div>`;
 }
 function closeSheet(){ $('#sheetRoot').innerHTML = ''; sheetResetArmed = false; }
 $('#sheetRoot').addEventListener('click', e => {
   const k = e.target.closest('[data-s]')?.dataset.s; if (!k) return;
   if (k === 'theme'){ $('#btnTheme').click(); return openSheet(); }
   if (k === 'ticker'){ setTicker(!TICK.on); return openSheet(); }
+  if (k === 'play'){ closeSheet(); return openPlayground(); }
   if (k === 'undo'){ undo(); return openSheet(); }
   if (k === 'redo'){ redo(); return openSheet(); }
   if (k === 'reset'){
@@ -3554,6 +3573,260 @@ $('#btnAsk').onclick = () => $('#chat').hidden ? openChat() : closeChat();
 let REPORTS = [];   // [{id, name, active, pages, pageIdx, sel (arrays), dt, hist}]
 S.reportId = null;
 const curReport = () => REPORTS.find(r => r.id === S.reportId);
+/* ============================== playgrounds ==============================
+   Two folders of saved work. "My playground" is private to each person; "Shared playground" is open to everyone
+   who uses this Miyar, and only the person who saved an item (or the owner) can change or delete it.
+   Where they live:
+     - inside Claude: the artifact's own store (db capability). Private items under data/users/<id>/, which no one
+       else can read; shared items under shared/<id>/items/, readable by all, writable only by their author.
+     - with Miyar server: the server's playground API (PostgreSQL plus file storage).
+     - opened as a plain file: My playground in this browser only; no shared folder, because nobody is signed in.
+   An item is a snapshot of one report: its pages and the data behind them, split into chunks for the store. */
+const PG = {ready: null, prov: 'none', uid: null, why: '', canWrite: true, folder: 'mine', items: {mine: null, shared: null}, busy: false};
+const PG_CHUNK = 80000;   // characters per stored chunk (stays under the store's 256 KiB document limit even for Arabic text)
+const PG_LOCAL = 'miyar-playground';
+function pgInit(){
+  return PG.ready ||= (async () => {
+    if (SRV.on){ Object.assign(PG, {prov: 'server', uid: SRV.me.id}); return PG; }
+    if (window.claude?.use){
+      const [db, user] = await Promise.all([window.claude.use('db').catch(() => null), window.claude.use('user').catch(() => null)]);
+      const id = user ? await user.id() : null;
+      if (db && id){
+        const w = await user.can('data.write');
+        Object.assign(PG, {prov: 'claude', db, user, uid: id, canWrite: w !== false});
+        if (w === false) PG.why = 'You can open saved work but not save it here. Ask the person who shared Miyar with you for Contributor access.';
+        return PG;
+      }
+      PG.prov = 'none'; PG.why = db ? 'Sign in to claude.ai to use the playgrounds.' : 'The playgrounds are not available in this view.';
+      return PG;
+    }
+    Object.assign(PG, {prov: 'local', uid: 'me'});
+    return PG;
+  })();
+}
+const pgShared = () => PG.prov === 'claude' || PG.prov === 'server';
+async function retryDb(fn){
+  for (let i = 0; ; i++){
+    try { return await fn(); }
+    catch (e){ if (i < 3 && (e?.code === 'unavailable' || e?.code === 'resource_exhausted')){ await sleep(400 * (i + 1) + Math.random() * 300); continue; } throw e; }
+  }
+}
+function pgErr(e){
+  if (e?.code === 'quota_exceeded') return 'The playground storage is full. Delete some saved items and try again.';
+  if (e?.code === 'invalid_argument') return 'You do not have permission to save here.';
+  return e?.message || 'Something went wrong.';
+}
+/* the current report and every dataset its pages use */
+function packCurrent(){
+  stashReport();
+  const r = curReport();
+  const used = [...new Set([r.active, ...(r.pages || []).map(pg => pg.ds)].filter(n => n && S.datasets[n]))];
+  return {v: 1, name: r.name, report: {active: r.active, pages: repContent(r).pages},
+    datasets: used.map(n => { const d = S.datasets[n]; return {name: n, sample: !!d.sample, columns: d.columns, rows: d.sample ? null : d.rows, source: d.source || null, calcs: calcsOut(n), fmt: S.fmt[n] || {}}; })};
+}
+const pgMeta = payload => ({name: payload.name, savedAt: new Date().toISOString(), pages: payload.report.pages.length,
+  datasets: payload.datasets.map(d => d.name), rows: payload.datasets.reduce((a, d) => a + (d.rows ? d.rows.length : 4200), 0)});
+function pgLocalRead(){ try { return JSON.parse(localStorage.getItem(PG_LOCAL) || '[]'); } catch { return []; } }
+function pgLocalWrite(list){ try { localStorage.setItem(PG_LOCAL, JSON.stringify(list)); } catch { throw new Error('This browser has no room left for more saved work. Delete some items first.'); } }
+
+async function pgList(folder){
+  if (PG.prov === 'claude'){
+    if (folder === 'mine'){
+      const q = await retryDb(() => PG.db.collection('data/users/' + PG.uid).get());
+      return q.docs.map(d => ({id: d.id, owner: PG.uid, ...d.data()}));
+    }
+    const users = (await retryDb(() => PG.db.collection('shared').get())).docs;
+    const lists = await Promise.all(users.map(u => retryDb(() => PG.db.collection('shared/' + u.id + '/items').get()).then(q => q.docs.map(d => ({id: d.id, owner: u.id, ...d.data()})))));
+    const all = lists.flat();
+    const ps = all.length ? await PG.user.profiles([...new Set(all.map(x => x.owner))]) : {};
+    all.forEach(x => { x.byName = x.owner === PG.uid ? 'you' : (ps[x.owner]?.name || 'a colleague'); });
+    return all;
+  }
+  if (PG.prov === 'server'){
+    const j = await api('GET', 'playground?folder=' + folder);
+    return j.items.map(x => ({id: x.id, owner: x.owner_id, name: x.name, savedAt: x.updated_at, pages: x.pages, rows: x.rows, byName: x.mine ? 'you' : (x.owner_name || 'a colleague'), canEdit: x.can_edit}));
+  }
+  if (PG.prov === 'local') return folder === 'mine' ? pgLocalRead().map(({payload, ...m}) => ({...m, owner: 'me'})) : [];
+  return [];
+}
+async function pgSave(folder, payload, existingId){
+  const text = JSON.stringify(payload), meta = pgMeta(payload);
+  if (PG.prov === 'claude'){
+    const n = Math.ceil(text.length / PG_CHUNK);
+    if (n > 150) throw new Error('This report is too large for the playground (over about 12 MB of data). Save fewer pages or smaller data.');
+    const id = existingId || (uid() + uid());
+    const ref = (folder === 'mine' ? PG.db.collection('data/users/' + PG.uid) : PG.db.collection('shared/' + PG.uid + '/items')).doc(id);
+    let old = 0;
+    if (existingId){ const snap = await retryDb(() => ref.get()); old = snap.exists ? (snap.data().chunks || 0) : 0; }
+    for (let i = 0; i < n; i++) await retryDb(() => ref.collection('chunks').doc('c' + i).set({i, s: text.slice(i * PG_CHUNK, (i + 1) * PG_CHUNK)}));
+    if (folder === 'shared') await retryDb(() => PG.db.doc('shared/' + PG.uid).set({updatedAt: meta.savedAt}));
+    await retryDb(() => ref.set({...meta, by: PG.uid, chunks: n, size: text.length}));
+    for (let i = n; i < old; i++) await ref.collection('chunks').doc('c' + i).delete().catch(() => {});
+    return id;
+  }
+  if (PG.prov === 'server'){
+    const id = existingId || crypto.randomUUID();
+    await apiBig('PUT', 'playground/' + id, {folder, name: payload.name, pages: meta.pages, rows: meta.rows, payload});
+    return id;
+  }
+  if (PG.prov === 'local'){
+    const list = pgLocalRead().filter(x => x.id !== existingId);
+    const id = existingId || uid();
+    list.push({id, ...meta, payload}); pgLocalWrite(list);
+    return id;
+  }
+  throw new Error(PG.why || 'The playgrounds are not available here.');
+}
+async function pgLoad(folder, item){
+  if (PG.prov === 'claude'){
+    const ref = (folder === 'mine' ? PG.db.collection('data/users/' + PG.uid) : PG.db.collection('shared/' + item.owner + '/items')).doc(item.id);
+    const parts = await Promise.all(Array.from({length: item.chunks || 0}, (_, i) => retryDb(() => ref.collection('chunks').doc('c' + i).get())));
+    if (!parts.length || parts.some(x => !x.exists)) throw new Error('Part of this saved report is missing. It may still be saving; try again in a moment.');
+    return JSON.parse(parts.map(x => x.data().s).join(''));
+  }
+  if (PG.prov === 'server'){
+    const r = await fetch('api/playground/' + encodeURIComponent(item.id), {credentials: 'same-origin'});
+    if (!r.ok) throw new Error('Could not open this saved report.');
+    return r.json();
+  }
+  if (PG.prov === 'local') return pgLocalRead().find(x => x.id === item.id)?.payload;
+  throw new Error(PG.why);
+}
+async function pgDelete(folder, item){
+  if (PG.prov === 'claude'){
+    const ref = (folder === 'mine' ? PG.db.collection('data/users/' + PG.uid) : PG.db.collection('shared/' + PG.uid + '/items')).doc(item.id);
+    await retryDb(() => ref.delete());
+    for (let i = 0; i < (item.chunks || 0); i++) await ref.collection('chunks').doc('c' + i).delete().catch(() => {});
+    return;
+  }
+  if (PG.prov === 'server') return api('DELETE', 'playground/' + encodeURIComponent(item.id));
+  if (PG.prov === 'local') return pgLocalWrite(pgLocalRead().filter(x => x.id !== item.id));
+}
+/* open a saved item as a report of its own */
+function openPayload(payload, link){
+  const rename = {};
+  for (const d of payload.datasets){
+    if (d.sample){
+      if (!S.datasets[d.name]){ const smp = makeSample(); S.datasets[smp.name] = smp; }
+      S.calcs[d.name] ||= d.calcs || []; S.fmt[d.name] ||= d.fmt || {};
+      continue;
+    }
+    let name = d.name;
+    const ex = S.datasets[name];
+    if (ex && !(ex.rows && ex.rows.length === d.rows.length && JSON.stringify(ex.columns) === JSON.stringify(d.columns))){
+      let k = 2; while (S.datasets[`${d.name} (${k})`]) k++; name = `${d.name} (${k})`;
+    }
+    if (!ex || name !== d.name){ S.datasets[name] = {name, columns: d.columns, rows: d.rows, raw: d.rows, source: d.source || undefined}; S.calcs[name] = d.calcs || []; S.fmt[name] = d.fmt || {}; }
+    rename[d.name] = name;
+  }
+  const R = n => rename[n] || n;
+  const pages = payload.report.pages.map(pg => ({...pg, ds: pg.ds ? R(pg.ds) : pg.ds}));
+  const cur = curReport();
+  const blank = cur && !ds() && !S.pages.some(pg => pg.visuals.length);
+  const r = newReport(payload.name, R(payload.report.active), pages);
+  r.link = link;
+  if (blank){ REPORTS = REPORTS.filter(x => x !== cur); renderReportBtn(); }
+  save();
+  return r;
+}
+const PG_ICON = {
+  mine: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>',
+  shared: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.5" cy="6" r="2.2"/><circle cx="11" cy="6.5" r="1.8"/><path d="M1.8 13.5c.4-2.2 1.9-3.4 3.7-3.4s3.3 1.2 3.7 3.4M9.6 10.3c1.9-.4 3.9.6 4.4 3.2"/></svg>',
+  item: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M5 10.5V8M8 10.5V5.5M11 10.5V7"/></svg>',
+};
+function ago(iso){
+  const sec = Math.max(1, (Date.now() - new Date(iso)) / 1000);
+  if (sec < 60) return 'just now';
+  const u = [[86400 * 30, 'month'], [86400 * 7, 'week'], [86400, 'day'], [3600, 'hour'], [60, 'minute']].find(([n]) => sec >= n);
+  const n = Math.floor(sec / u[0]); return `${n} ${u[1]}${n === 1 ? '' : 's'} ago`;
+}
+async function openPlayground(folder){
+  if (folder) PG.folder = folder;
+  const dlg = modal(`<div class="dlg-h"><h3>Playgrounds</h3><div class="dtabs">
+      <button class="tab ${PG.folder === 'mine' ? 'on' : ''}" data-pf="mine" type="button">${PG_ICON.mine}My playground</button>
+      <button class="tab ${PG.folder === 'shared' ? 'on' : ''}" data-pf="shared" type="button">${PG_ICON.shared}Shared playground</button></div>
+      <button class="btn ghost" data-x type="button">Close</button></div><div class="dlg-b" id="pgB"><p class="busy">Loading…</p></div>`);
+  dlg.querySelector('[data-x]').onclick = closeModal;
+  dlg.querySelectorAll('[data-pf]').forEach(b => b.onclick = () => openPlayground(b.dataset.pf));
+  await pgInit();
+  drawPlayground();
+}
+async function drawPlayground(){
+  const box = $('#pgB'); if (!box) return;
+  const f = PG.folder, mine = f === 'mine';
+  const intro = mine
+    ? (PG.prov === 'local' ? 'Only you can see these. They are kept in this browser, so they are not on your other devices.' : 'Only you can see what you save here. Nobody else can open it, including whoever runs this Miyar.')
+    : 'Everyone who uses this Miyar can open what is saved here. Only the person who saved an item, or the owner, can change or delete it.';
+  let head = `<div class="pg-intro">${mine ? PG_ICON.mine : PG_ICON.shared}<p>${esc(intro)}</p></div>`;
+  if (!mine && !pgShared()){
+    box.innerHTML = head + `<div class="pg-empty">${esc(PG.prov === 'local' ? 'The shared playground needs people to sign in, so it works on Miyar server or inside claude.ai. Opened as a plain file, Miyar can only keep work in this browser.' : PG.why)}</div>`;
+    return;
+  }
+  if (PG.prov === 'none'){ box.innerHTML = head + `<div class="pg-empty">${esc(PG.why)}</div>`; return; }
+  const r = curReport(), hasData = !!ds() || S.pages.some(pg => pg.visuals.length);
+  const linked = r?.link && r.link.folder === f && (r.link.owner === PG.uid || PG.prov === 'local') ? r.link : null;
+  if (PG.canWrite) head += `<div class="pg-save">${hasData
+    ? `<input type="text" id="pgName" value="${esc(r.name)}" aria-label="Name to save as" maxlength="80">
+       ${linked ? `<button class="btn primary" type="button" id="pgUpd">Save changes</button><button class="btn" type="button" id="pgNew">Save as a copy</button>`
+                : `<button class="btn primary" type="button" id="pgNew">Save to ${mine ? 'My' : 'Shared'} playground</button>`}`
+    : '<span class="hint">Add some data first, then save your report here.</span>'}</div>`;
+  else if (PG.why) head += `<p class="hint">${esc(PG.why)}</p>`;
+  box.innerHTML = head + '<div class="pg-list" id="pgList"><p class="busy">Loading saved work…</p></div><p id="pgMsg"></p>';
+  const msg = $('#pgMsg');
+  const doSave = async existing => {
+    const name = ($('#pgName').value.trim() || r.name).slice(0, 80);
+    if (name !== r.name){ r.name = name; renderReportBtn(); save(); }
+    $$('#pgB .pg-save button').forEach(b => b.disabled = true);
+    msg.className = 'busy'; msg.textContent = 'Saving…';
+    try {
+      const payload = packCurrent(); payload.name = name;
+      const id = await pgSave(f, payload, existing);
+      r.link = {folder: f, id, owner: PG.uid}; save();
+      toast(`Saved “${name}” to ${mine ? 'My' : 'the Shared'} playground.`);
+      PG.items[f] = null; drawPlayground();
+    } catch (e){ console.error(e); msg.className = 'err'; msg.textContent = 'Not saved: ' + pgErr(e); $$('#pgB .pg-save button').forEach(b => b.disabled = false); }
+  };
+  $('#pgUpd')?.addEventListener('click', () => doSave(linked.id));
+  $('#pgNew')?.addEventListener('click', () => doSave(null));
+  let items;
+  try { items = await pgList(f); }
+  catch (e){ console.error(e); $('#pgList').innerHTML = `<p class="err">Could not load the playground: ${esc(pgErr(e))}</p>`; return; }
+  items.sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)));
+  PG.items[f] = items;
+  const list = $('#pgList'); if (!list) return;
+  if (!items.length){ list.innerHTML = `<div class="pg-empty">${mine ? 'Nothing saved yet. Save the report you are working on with the button above.' : 'Nobody has shared anything yet. Save a report here to share it with everyone.'}</div>`; return; }
+  list.innerHTML = items.map((x, i) => {
+    const own = x.owner === PG.uid || PG.prov === 'local' || x.canEdit;
+    const cur = r?.link && r.link.id === x.id;
+    return `<div class="pg-item ${cur ? 'cur' : ''}"><span class="pg-ic">${PG_ICON.item}</span>
+      <div><b title="${esc(x.name)}">${esc(x.name)}</b><small>${x.pages} page${x.pages === 1 ? '' : 's'} · ${Number(x.rows || 0).toLocaleString()} rows · saved ${esc(ago(x.savedAt))}${!mine ? ` by ${esc(x.byName || 'a colleague')}` : ''}${cur ? ' · open now' : ''}</small></div>
+      <div class="acts"><button class="btn sm primary" type="button" data-pg-open="${i}">Open</button>${own && PG.canWrite ? `<button class="btn sm danger" type="button" data-pg-del="${i}">Delete</button>` : ''}</div></div>`;
+  }).join('');
+  $$('[data-pg-open]', list).forEach(b => b.onclick = async () => {
+    const x = items[+b.dataset.pgOpen];
+    const open = REPORTS.find(rr => rr.link?.id === x.id);
+    if (open){ closeModal(); if (open.id !== S.reportId) switchReport(open.id); return; }
+    b.disabled = true; b.textContent = 'Opening…';
+    try {
+      const payload = await pgLoad(f, x);
+      closeModal();
+      openPayload(payload, {folder: f, id: x.id, owner: x.owner});
+      toast(`Opened “${x.name}”${!mine && x.owner !== PG.uid ? ` from ${x.byName}` : ''}.`);
+    } catch (e){ console.error(e); msg.className = 'err'; msg.textContent = pgErr(e); b.disabled = false; b.textContent = 'Open'; }
+  });
+  $$('[data-pg-del]', list).forEach(b => b.onclick = async () => {
+    if (!b.dataset.sure){ b.dataset.sure = '1'; b.textContent = 'Click again to delete'; return; }
+    const x = items[+b.dataset.pgDel];
+    b.disabled = true; b.textContent = 'Deleting…';
+    try {
+      await pgDelete(f, x);
+      REPORTS.forEach(rr => { if (rr.link?.id === x.id) delete rr.link; });
+      toast(`Deleted “${x.name}” from the ${mine ? 'My' : 'Shared'} playground.`);
+      drawPlayground();
+    } catch (e){ msg.className = 'err'; msg.textContent = 'Not deleted: ' + pgErr(e); b.disabled = false; b.textContent = 'Delete'; }
+  });
+}
+$('#btnPlay').onclick = () => openPlayground();
 function stashReport(){
   const r = curReport(); if (!r) return;
   Object.assign(r, {active: S.active, pages: S.pages, pageIdx: S.pageIdx, dt: S.dt || null,
@@ -3611,6 +3884,7 @@ function openReportsMenu(){
     <hr><button type="button" role="menuitem" data-r="import">Import a file into a new report…</button>
     <button type="button" role="menuitem" data-r="new">New blank report</button>
     <button type="button" role="menuitem" data-r="rename">Rename this report…</button>
+    <button type="button" role="menuitem" data-r="play">Save or open in a playground…</button>
     <button type="button" role="menuitem" data-r="ticker">${TICK.on ? 'Hide' : 'Show'} the highlights ticker</button>
     ${REPORTS.length > 1 ? `<button type="button" role="menuitem" class="danger" data-r="close">Close this report</button>` : ''}`;
   document.body.append(m);
@@ -3626,6 +3900,7 @@ function openReportsMenu(){
     if (a === 'close') closeReport(S.reportId);
     if (a === 'rename') renameReport();
     if (a === 'ticker') setTicker(!TICK.on);
+    if (a === 'play') openPlayground();
   });
   m.querySelector('button')?.focus();
 }
@@ -3881,7 +4156,8 @@ async function openUsers(){
 }
 const AUDIT_LABEL = {'user.sign_in': 'Signed in', 'user.sign_out': 'Signed out', 'user.role': 'Changed role', 'report.create': 'Created report', 'report.update': 'Edited report',
   'report.delete': 'Deleted report', 'dataset.create': 'Added dataset', 'dataset.refresh': 'Refreshed dataset', 'dataset.replace': 'Replaced dataset rows',
-  'dataset.update': 'Edited dataset settings', 'dataset.delete': 'Deleted dataset', 'source.query': 'Queried data source'};
+  'dataset.update': 'Edited dataset settings', 'dataset.delete': 'Deleted dataset', 'source.query': 'Queried data source',
+  'playground.save': 'Saved to a playground', 'playground.update': 'Updated a playground item', 'playground.delete': 'Deleted a playground item'};
 async function openAudit(){
   const dlg = modal(`<div class="dlg-h"><h3>Activity log</h3><button class="btn ghost" data-x type="button">Close</button></div><div class="dlg-b" id="audB"><p class="busy">Loading…</p></div>`);
   dlg.querySelector('[data-x]').onclick = closeModal;
