@@ -1697,14 +1697,33 @@ async function quickImport(file){
   try {
     const sheets = await readAnyFile(file);
     const base = file.name.replace(/\.[^.]+$/, '');
+    if (sheets.length > 1) rememberBook(base, sheets);
     const go = i => {
+      if (sheets.length > 1) return openBookSheet(i);
       const t = sheets[i].get();
-      buildFromTable(sheets.length > 1 ? `${base} – ${sheets[i].name}` : base, t.names, t.records);
+      buildFromTable(base, t.names, t.records);
     };
     if (sheets.length === 1) return go(0);
     say(`<div class="sheets"><p style="margin:10px 0 2px;color:var(--ink2)">This workbook has ${sheets.length} sheets. Which one should Miyar use?</p>${sheets.map((sh, i) => `<button type="button" data-sh="${i}"><b>${esc(sh.name)}</b></button>`).join('')}</div>`);
     $$('[data-sh]', msg).forEach(b => b.onclick = () => { try { go(+b.dataset.sh); } catch (e){ say(`<p class="err" style="margin-top:12px">${esc(e.message)}</p>`); } });
   } catch (e){ console.error(e); say(`<p class="err" style="margin-top:12px">Could not read that file: ${esc(e.message || e)}</p>`); }
+}
+/* The last workbook with several sheets stays available, so its other sheets open as new reports without uploading again. */
+let BOOK = null;   // {base, sheets: [{name, get}], opened: Set of sheet indexes}
+function rememberBook(base, sheets){ if (BOOK?.sheets !== sheets) BOOK = {base, sheets, opened: new Set()}; }
+function openBookSheet(i){
+  const sh = BOOK.sheets[i], name = `${BOOK.base} – ${sh.name}`;
+  const existing = REPORTS.find(r => (r.id === S.reportId ? S.active : r.active) === name);
+  BOOK.opened.add(i);
+  if (existing){ switchReport(existing.id); return; }
+  const t = sh.get();
+  buildFromTable(name, t.names, t.records);
+  offerMoreSheets();
+}
+function offerMoreSheets(){
+  if (!BOOK) return;
+  const left = BOOK.sheets.length - BOOK.opened.size;
+  if (left > 0) toast(`Dashboard ready for “${S.active}”. ${left} more sheet${left === 1 ? '' : 's'} in this file.`, 'Open another sheet', () => openReportsMenu());
 }
 function buildFromTable(name, names, records, source = null){
   const n = loadDataset(name, names, records);
@@ -2459,7 +2478,11 @@ function showPreview(box, sheets, baseName, source = null){
     $('#pSheet')?.addEventListener('change', e => { idx = +e.target.value; draw(); });
     $('#pCancel').onclick = () => { box.innerHTML = ''; };
     $('#pGo').onclick = () => {
-      if ($('#pAuto').checked && $('#pNew').checked){ closeModal(); buildFromTable($('#pName').value || dflt, cur.names, cur.records, source); return; }
+      if ($('#pAuto').checked && $('#pNew').checked){
+        const nm = $('#pName').value.trim() || dflt; closeModal();
+        if (sheets.length > 1 && !source){ rememberBook(baseName, sheets); BOOK.opened.add(idx); }
+        buildFromTable(nm, cur.names, cur.records, source); offerMoreSheets(); return;
+      }
       const n = loadDataset($('#pName').value || dflt, cur.names, cur.records);
       if (source) S.datasets[n].source = {...source, refreshed: new Date().toISOString()};
       const auto = $('#pAuto').checked, fresh = $('#pNew').checked;
@@ -3341,6 +3364,7 @@ function openReportsMenu(){
   const m = document.createElement('div');
   m.className = 'ctx'; m.setAttribute('role', 'menu');
   m.innerHTML = `<div class="h">Your reports</div>${REPORTS.map(r => `<button type="button" role="menuitem" class="rep ${r.id === S.reportId ? 'on' : ''}" data-rep="${esc(r.id)}"><span style="overflow:hidden;text-overflow:ellipsis">${esc(r.name)}</span><small>${(r.id === S.reportId ? S.pages : r.pages || []).length} pg</small></button>`).join('')}
+    ${BOOK && canEdit() ? `<hr><div class="h">Sheets in ${esc(BOOK.base)}</div>${BOOK.sheets.map((sh, i) => `<button type="button" role="menuitem" class="rep" data-sheet="${i}"><span style="overflow:hidden;text-overflow:ellipsis">${esc(sh.name)}</span><small>${BOOK.opened.has(i) ? 'open' : 'open as new report'}</small></button>`).join('')}` : ''}
     <hr><button type="button" role="menuitem" data-r="import">Import a file into a new report…</button>
     <button type="button" role="menuitem" data-r="new">New blank report</button>
     <button type="button" role="menuitem" data-r="rename">Rename this report…</button>
@@ -3351,6 +3375,7 @@ function openReportsMenu(){
     const x = e.target.closest('button'); if (!x) return;
     closeMenu();
     if (x.dataset.rep) return switchReport(x.dataset.rep);
+    if (x.dataset.sheet != null){ try { openBookSheet(+x.dataset.sheet); } catch (e){ toast(`Could not open that sheet: ${e.message}`); } return; }
     const a = x.dataset.r;
     if (a === 'import') openData('import');
     if (a === 'new'){ newReport('Untitled report', S.active, [{id: uid(), name: 'Page 1', visuals: []}]); toast('Opened a new blank report. Your other reports are in this menu.'); }
