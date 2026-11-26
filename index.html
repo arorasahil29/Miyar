@@ -129,6 +129,21 @@ button{cursor:pointer}
 .card.focus{position:fixed;inset:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px));z-index:40}
 .scrim{position:fixed;inset:0;background:rgba(8,12,20,.45);z-index:35}
 .empty-v{height:100%;display:grid;place-items:center;text-align:center;color:var(--ink3);font-size:12px;padding:8px}
+.welcome{grid-column:1/-1;grid-row:span 7;display:grid;place-items:center;padding:24px 8px}
+.welcome-in{width:min(560px,100%);text-align:center}
+.welcome-in h2{font-family:var(--f-head);font-size:24px;letter-spacing:-.01em;margin:14px 0 6px;text-wrap:balance}
+.welcome-in > p{color:var(--ink2);line-height:1.55;margin:0 auto 18px;max-width:52ch}
+.drop-big{display:block;cursor:pointer;border:2px dashed var(--line2);border-radius:14px;padding:34px 18px;background:var(--panel);transition:border-color .15s,background .15s}
+.drop-big:hover,.drop-big.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop-big b{display:block;font-size:16px;margin:10px 0 4px;color:var(--ink)}
+.drop-big span{color:var(--ink3);font-size:12.5px}
+.drop-big svg{width:34px;height:34px;color:var(--accent)}
+.welcome .alt{margin-top:14px;color:var(--ink3);font-size:12.5px}
+.welcome .alt button{border:0;background:none;color:var(--accent);padding:2px 4px;font-size:12.5px;text-decoration:underline;text-underline-offset:2px}
+.welcome .sheets{display:flex;flex-direction:column;gap:6px;margin-top:12px;text-align:start}
+.welcome .sheets button{border:1px solid var(--line2);background:var(--panel);border-radius:8px;padding:10px 12px;text-align:start}
+.welcome .sheets button:hover{border-color:var(--accent);background:var(--accent-soft)}
+.welcome .privacy{color:var(--ink3);font-size:12px;margin-top:16px}
 .empty-canvas{grid-column:1/-1;grid-row:span 4;display:grid;place-items:center;text-align:center;color:var(--ink2);border:1.5px dashed var(--line2);border-radius:10px;padding:20px}
 
 /* KPI */
@@ -476,10 +491,10 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-const LS_KEY = 'facet-bi-v2', LS_OLD = 'facet-bi-v1';
+const LS_KEY = 'miyar-v1';
+try { ['facet-bi-v1', 'facet-bi-v2'].forEach(k => localStorage.removeItem(k)); } catch {}   // data from earlier versions is not carried over
 const store = {
   get(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch { return null; } },
-  old(){ try { return JSON.parse(localStorage.getItem(LS_OLD) || 'null'); } catch { return null; } },
   set(v){ try { localStorage.setItem(LS_KEY, JSON.stringify(v)); return true; } catch { return false; } }
 };
 
@@ -1628,7 +1643,7 @@ function renderCanvas(){
   const ids = new Set(p.visuals.map(v => v.id));
   for (const [id, c] of charts) if (!ids.has(id)){ c.dispose(); charts.delete(id); }
   $$('.card', cv).forEach(el => { if (!ids.has(el.dataset.id)) el.remove(); });
-  $('.empty-canvas', cv)?.remove();
+  $('.empty-canvas', cv)?.remove(); $('.welcome', cv)?.remove();
   let prev = null;
   for (const v of p.visuals){
     let el = $(`.card[data-id="${v.id}"]`, cv);
@@ -1639,9 +1654,81 @@ function renderCanvas(){
     renderVisual(v, el);
     prev = el;
   }
+  if (!p.visuals.length && !ds()){ cv.insertAdjacentHTML('beforeend', welcomeHtml()); bindWelcome(); return; }
   if (!p.visuals.length){
     cv.insertAdjacentHTML('beforeend', `<div class="empty-canvas"><div><p style="font-family:var(--f-head);font-size:16px;color:var(--ink);margin:0 0 6px">This page is empty</p><p class="hint" style="margin:0">Drag a field here to start a visual, click <b>Visual</b> to add one, or use <b>Auto-build</b> for a starter layout.</p></div></div>`);
   }
+}
+const ACCEPT = '.xlsx,.xls,.xlsm,.xlsb,.ods,.csv,.tsv,.txt,.json,.pdf,.html,.htm';
+function welcomeHtml(){
+  if (!canEdit()) return `<div class="welcome"><div class="welcome-in"><h2>No reports yet</h2><p>Nobody has shared a report in ${esc(SRV.cfg?.org || 'your organisation')} yet. Ask an editor to upload data, or ask an administrator for editor access.</p></div></div>`;
+  return `<div class="welcome"><div class="welcome-in">
+    <svg width="44" height="44" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="12" width="5" height="10" rx="1.5" fill="var(--s1)"/><rect x="9.5" y="6" width="5" height="16" rx="1.5" fill="var(--accent)"/><rect x="17" y="2" width="5" height="20" rx="1.5" fill="var(--s3)"/></svg>
+    <h2>Start with your data</h2>
+    <p>Upload an Excel sheet and Miyar builds a dashboard for you: key figures, trends, breakdowns and a detail table. You can change everything afterwards.</p>
+    <label class="drop-big" id="wDrop" for="wFile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V4m-4.5 4.5L12 4l4.5 4.5M4 15v4.5h16V15"/></svg>
+      <b>Choose an Excel file</b><span>or drop it here · Excel, CSV, JSON and PDF tables</span>
+    </label>
+    <input type="file" id="wFile" accept="${ACCEPT}" hidden>
+    <div id="wMsg" aria-live="polite"></div>
+    <div class="alt">Other ways in: <button type="button" data-w="paste">paste data</button>·<button type="button" data-w="sources">connect a database</button>·<button type="button" data-w="sample">try sample data</button></div>
+    <p class="privacy">${SRV.on ? `Data you upload is saved to ${esc(SRV.cfg.org)}'s Miyar server and shared with your colleagues.` : 'Your file is read in this browser and is not uploaded anywhere.'}</p>
+  </div></div>`;
+}
+function bindWelcome(){
+  const drop = $('#wDrop'), input = $('#wFile'); if (!drop) return;
+  input.onchange = () => input.files[0] && quickImport(input.files[0]);
+  drop.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) quickImport(f); });
+  $$('.welcome [data-w]').forEach(b => b.onclick = () => {
+    const k = b.dataset.w;
+    if (k === 'paste'){ openData('import'); setTimeout(() => { $('#dlgBody details')?.setAttribute('open', ''); $('#pText')?.focus(); }, 0); }
+    if (k === 'sources') openData('sources');
+    if (k === 'sample'){ const r = curReport(); if (r) r.name = 'Retail sample'; resetToSample(); }
+  });
+}
+/* Upload a file and build the dashboard straight away (no preview step). Workbooks with several sheets ask which one. */
+async function quickImport(file){
+  const msg = $('#wMsg');
+  const say = (html, cls = '') => { if (msg){ msg.className = cls; msg.innerHTML = html; } };
+  say(`<p class="busy" style="margin-top:14px">Reading ${esc(file.name)}…</p>`);
+  try {
+    const sheets = await readAnyFile(file);
+    const base = file.name.replace(/\.[^.]+$/, '');
+    const go = i => {
+      const t = sheets[i].get();
+      buildFromTable(sheets.length > 1 ? `${base} – ${sheets[i].name}` : base, t.names, t.records);
+    };
+    if (sheets.length === 1) return go(0);
+    say(`<div class="sheets"><p style="margin:10px 0 2px;color:var(--ink2)">This workbook has ${sheets.length} sheets. Which one should Miyar use?</p>${sheets.map((sh, i) => `<button type="button" data-sh="${i}"><b>${esc(sh.name)}</b></button>`).join('')}</div>`);
+    $$('[data-sh]', msg).forEach(b => b.onclick = () => { try { go(+b.dataset.sh); } catch (e){ say(`<p class="err" style="margin-top:12px">${esc(e.message)}</p>`); } });
+  } catch (e){ console.error(e); say(`<p class="err" style="margin-top:12px">Could not read that file: ${esc(e.message || e)}</p>`); }
+}
+function buildFromTable(name, names, records, source = null){
+  const n = loadDataset(name, names, records);
+  if (source) S.datasets[n].source = {...source, refreshed: new Date().toISOString()};
+  const cur = curReport();
+  const blank = cur && !ds() && !S.pages.some(pg => pg.visuals.length);
+  if (blank){ cur.name = n; S.active = n; S.sel = {}; S.dt = null; buildModel(); S.pages = []; }
+  else { newReport(n, n, []); S.pages = []; }
+  autoBuild();
+  S.pages.forEach(pg => { if (pg.name.startsWith('Overview · ')) pg.name = 'Overview'; });
+  S.pageIdx = 0; renderAll();
+  toast(`Built a dashboard from ${records.length.toLocaleString()} rows of “${n}”. Click any visual to change it.`);
+  return n;
+}
+function startOver(){
+  S.datasets = {}; S.calcs = {}; S.fmt = {}; S.sel = {}; S.dt = null; S.selected = null;
+  REPORTS = []; Object.keys(CHATS).forEach(k => delete CHATS[k]);
+  try { localStorage.removeItem(LS_KEY); } catch {}
+  blankStart();
+}
+function blankStart(){
+  const r = {id: uid(), name: 'Untitled report', active: null, pages: [{id: uid(), name: 'Page 1', visuals: []}]};
+  REPORTS = [r]; HIST.stack = []; HIST.i = -1;
+  loadReport(r); commit(); histButtons();
 }
 function renderTabs(){
   $('#tabs').innerHTML = S.pages.map((p, i) => `<button class="tab ${i === S.pageIdx ? 'on' : ''}" data-i="${i}" type="button" title="Double-click to rename">${esc(p.name)}</button>${i === S.pageIdx && S.pages.length > 1 ? `<button class="tab-x" data-delpage="${i}" type="button" aria-label="Delete page ${esc(p.name)}" title="Delete this page">×</button>` : ''}`).join('') + `<button class="tab tab-add" id="addPage" type="button" aria-label="Add page" title="Add page">+</button>`;
@@ -1654,6 +1741,8 @@ function renderSelbar(){
     `<span class="rowcount">${n.toLocaleString()} of ${ROWS.length.toLocaleString()} rows</span>`;
 }
 function renderFields(){
+  $('#dsPick').hidden = !Object.keys(S.datasets).length; $('#fieldSearch').hidden = !ds();
+  if (!ds()){ $('#fieldList').innerHTML = '<p class="hint" style="margin:4px 2px">Upload data to see its fields here.</p>'; const rb0 = $('#dsRefresh'); if (rb0) rb0.hidden = true; return; }
   $('#dsPick').innerHTML = Object.keys(S.datasets).map(n => `<option ${n === S.active ? 'selected' : ''}>${esc(n)}</option>`).join('');
   let rb = $('#dsRefresh');
   if (!rb){ rb = document.createElement('button'); rb.id = 'dsRefresh'; rb.type = 'button'; rb.className = 'btn sm ds-refresh'; $('#dsPick').after(rb); rb.onclick = () => refreshDataset(S.active, rb); }
@@ -1968,7 +2057,7 @@ $('#selbar').addEventListener('click', e => {
 });
 $('#btnAdd').onclick = () => { S.selected = null; renderBuild(); openDrawer('buildPane'); addVisual('column'); };
 $('#btnData').onclick = () => openData('table');
-$('#btnAuto').onclick = () => { autoBuild(); toast(`Added page “${page().name}” built from ${S.active}.`); };
+$('#btnAuto').onclick = () => { if (!ds()) return openData('import'); autoBuild(); toast(`Added page “${page().name}” built from ${S.active}.`); };
 $('#btnReport').onclick = openReport;
 $('#btnExport').onclick = openExport;
 $('#btnUndo').onclick = undo;
@@ -2161,7 +2250,8 @@ function closeModal(){ $('#modalRoot').innerHTML = ''; }
 
 function openData(tab = 'table', extra = null){
   const d = ds();
-  const dlg = modal(`<div class="dlg-h"><h3>${esc(S.active)}</h3><div class="dtabs">${[['table','Rows'],['cols','Columns'],['calc','Calculated fields'],['import','Import data'],['sources','Data sources']].map(([k, l]) => `<button class="tab ${k === tab ? 'on' : ''}" data-t="${k}" type="button">${l}</button>`).join('')}</div><button class="btn ghost" data-x type="button">Close</button></div><div class="dlg-b" id="dlgBody"></div>`);
+  if (!d && ['table', 'cols', 'calc'].includes(tab)) tab = 'import';
+  const dlg = modal(`<div class="dlg-h"><h3>${esc(S.active || 'Your data')}</h3><div class="dtabs">${[['table','Rows'],['cols','Columns'],['calc','Calculated fields'],['import','Import data'],['sources','Data sources']].map(([k, l]) => `<button class="tab ${k === tab ? 'on' : ''}" data-t="${k}" type="button">${l}</button>`).join('')}</div><button class="btn ghost" data-x type="button">Close</button></div><div class="dlg-b" id="dlgBody"></div>`);
   dlg.querySelector('[data-x]').onclick = closeModal;
   dlg.querySelectorAll('[data-t]').forEach(b => b.onclick = () => openData(b.dataset.t));
   const body = $('#dlgBody');
@@ -2369,6 +2459,7 @@ function showPreview(box, sheets, baseName, source = null){
     $('#pSheet')?.addEventListener('change', e => { idx = +e.target.value; draw(); });
     $('#pCancel').onclick = () => { box.innerHTML = ''; };
     $('#pGo').onclick = () => {
+      if ($('#pAuto').checked && $('#pNew').checked){ closeModal(); buildFromTable($('#pName').value || dflt, cur.names, cur.records, source); return; }
       const n = loadDataset($('#pName').value || dflt, cur.names, cur.records);
       if (source) S.datasets[n].source = {...source, refreshed: new Date().toISOString()};
       const auto = $('#pAuto').checked, fresh = $('#pNew').checked;
@@ -2713,7 +2804,7 @@ function openReport(){
   const dlg = modal(`<div class="dlg-h"><h3>Report file</h3><button class="btn ghost" data-x type="button">Close</button></div>
     <div class="dlg-b"><p>Your report saves automatically in this browser. To move it elsewhere, copy the report definition below (pages, visuals, calculated fields and formats; data is not included) and paste it into Miyar on another device.</p>
     <textarea class="code" id="rJson" spellcheck="false">${esc(json)}</textarea>
-    <div class="form-row" style="margin-top:8px"><button class="btn" id="rCopy" type="button">Copy definition</button><button class="btn primary" id="rLoad" type="button">Load pasted definition</button><span style="flex:1"></span><button class="btn danger" id="rReset" type="button">Reset to sample</button></div>
+    <div class="form-row" style="margin-top:8px"><button class="btn" id="rCopy" type="button">Copy definition</button><button class="btn primary" id="rLoad" type="button">Load pasted definition</button><span style="flex:1"></span>${SRV.on ? '' : '<button class="btn danger" id="rReset" type="button">Start over with no data</button>'}</div>
     <div id="rMsg"></div></div>`, 'small');
   dlg.querySelector('[data-x]').onclick = closeModal;
   $('#rCopy').onclick = () => { const ta = $('#rJson'); navigator.clipboard?.writeText(ta.value).then(() => { $('#rMsg').className = 'ok'; $('#rMsg').textContent = 'Copied.'; }, () => { ta.select(); $('#rMsg').className = 'hint'; $('#rMsg').textContent = 'Press Ctrl+C or ⌘C to copy the selected text.'; }) ?? (ta.select()); };
@@ -2726,9 +2817,9 @@ function openReport(){
     } catch (e){ $('#rMsg').className = 'err'; $('#rMsg').textContent = 'That is not a valid report definition: ' + e.message; }
   };
   const rr = $('#rReset');
-  rr.onclick = () => {
-    if (rr.dataset.confirm){ resetToSample(); closeModal(); toast('Report reset to the sample.'); return; }
-    rr.dataset.confirm = '1'; rr.textContent = 'Click again to replace your report';
+  if (rr) rr.onclick = () => {
+    if (rr.dataset.confirm){ closeModal(); startOver(); toast('Everything was removed. Upload a file to start again.'); return; }
+    rr.dataset.confirm = '1'; rr.textContent = 'Click again to delete all reports and data';
   };
 }
 function reportJSON(){
@@ -2736,27 +2827,47 @@ function reportJSON(){
 }
 
 /* ============================== auto-build ============================== */
+/* Builds a starter dashboard from whatever columns the data has: headline figures, a trend, breakdowns and a detail table. */
 function autoBuild(){
+  if (!ds()){ openData('import'); return; }
   const cols = ds().columns;
-  const nums = cols.filter(c => c.type === 'number');
-  const pri = c => /revenue|sales|amount|profit|total|value|cost|price|qty|quantity|units/i.test(c.name) ? 0 : 1;
-  nums.sort((a, b) => pri(a) - pri(b));
   const card = new Map(cols.map(c => [c.name, new Set(ROWS.map(r => r[c.name])).size]));
-  const dims = cols.filter(c => c.type === 'string' && card.get(c.name) >= 2 && card.get(c.name) <= 40).sort((a, b) => card.get(a.name) - card.get(b.name)).map(c => c.name);
+  const rank = n => /revenue|sales|turnover|amount|value|total|income/i.test(n) ? 0 : /profit|margin/i.test(n) ? 1 : /cost|expense|spend|cogs|price/i.test(n) ? 2 : /qty|quantity|units|volume/i.test(n) ? 3 : 4;
+  const idLike = n => /(^|[\s_-])(id|code|no|number|zip|postal|phone|year|month|day)$/i.test(n);
+  const nums = cols.filter(c => c.type === 'number' && card.get(c.name) > 1 && !idLike(c.name)).sort((a, b) => rank(a.name) - rank(b.name));
+  // Revenue and cost columns get an automatic Profit and Margin %
+  const rev = nums.find(c => rank(c.name) === 0), cost = nums.find(c => /cost|expense|cogs/i.test(c.name));
+  if (rev && cost && !FMAP.has('Profit') && !FMAP.has('Margin %')){
+    calcs().push({name: 'Profit', expr: `[${rev.name}] - [${cost.name}]`}, {name: 'Margin %', expr: `SUM([Profit]) / SUM([${rev.name}])`, fmt: 'percent'});
+    buildModel();
+  }
+  const profit = FMAP.get('Profit')?.src === 'calc' && !calcs().find(c => c.name === 'Profit')?.error;
+  const dims = cols.filter(c => c.type === 'string' && card.get(c.name) >= 2 && card.get(c.name) <= 40 && !idLike(c.name))
+    .sort((a, b) => card.get(a.name) - card.get(b.name)).map(c => c.name);
   const date = cols.find(c => c.type === 'date');
-  const m = nums[0] ? {f: nums[0].name, agg:'sum'} : {f: RECORDS, agg:'count'};
+  const main = nums[0] ? {f: nums[0].name, agg: 'sum'} : {f: RECORDS, agg: 'count'};
+  const L = m => m.f === RECORDS ? 'Rows' : m.f;
+  const kpis = [main];
+  if (profit) kpis.push({f: 'Profit', agg: 'sum'}, {f: 'Margin %', agg: 'sum'});
+  for (const c of nums.slice(1)) if (kpis.length < 3 && c.name !== cost?.name) kpis.push({f: c.name, agg: 'sum'});
+  if (kpis.length < 4) kpis.push({f: RECORDS, agg: 'count'});
+  const years = date ? new Set(ROWS.map(r => r[`${date.name} (Year)`]).filter(Boolean)).size : 0;
+  const hier = date ? ['Year', 'Quarter', 'Month'].map(p => `${date.name} (${p})`) : null;
   const vis = [];
-  const kpis = nums.slice(0, 3).map(c => ({f: c.name, agg: 'sum'}));
-  kpis.push({f: RECORDS, agg: 'count'});
-  const trend = date ? `${date.name} (Month)` : null;
-  kpis.slice(0, 4).forEach(k => vis.push(newVisual('kpi', {measures:[k], dims: trend ? [trend] : [], w:3, h:2})));
-  if (trend) vis.push(newVisual('area', {dims:[trend], measures:[m], w:8, h:4}));
-  if (dims[0]) vis.push(newVisual(trend ? 'slicer' : 'column', {dims:[dims[0]], measures: trend ? [] : [m], w: trend ? 4 : 8, h:4}));
-  if (dims[1]) vis.push(newVisual('bar', {dims:[dims[1]], measures:[m], w:4, h:4}));
-  if (dims[2] || dims[0]) vis.push(newVisual('donut', {dims:[dims[2] || dims[0]], measures:[m], w:4, h:4}));
-  if (dims[0] && (dims[1] || date)) vis.push(newVisual('matrix', {dims:[dims[1] || dims[0]], legend: date ? `${date.name} (Year)` : dims[0], measures:[m], heat:true, w:4, h:4}));
-  const tdims = dims.slice(0, 2);
-  if (tdims.length || nums.length) vis.push(newVisual('table', {dims: tdims, measures: nums.slice(0, 4).map(c => ({f: c.name, agg:'sum'})), bars:true, w:12, h:5}));
+  const w = Math.floor(12 / kpis.length);
+  kpis.forEach((m, i) => vis.push(newVisual('kpi', {title: i === 0 ? `Total ${L(m)}` : m.f === RECORDS ? 'Number of rows' : L(m), measures: [m], dims: date ? [`${date.name} (Month)`] : [], w, h: 2})));
+  if (date) vis.push(newVisual('area', {title: `${L(main)} over time`, dims: hier, level: 2, path: [null, null], measures: [main], w: dims[0] ? 8 : 12, h: 4}));
+  if (dims[0]) vis.push(date ? newVisual('slicer', {dims: [dims[0]], w: 4, h: 4}) : newVisual('column', {title: `${L(main)} by ${dims[0]}`, dims: [dims[0]], measures: [main], w: 8, h: 4}));
+  if (!date && dims[0]) vis.push(newVisual('donut', {title: `Share of ${L(main)} by ${dims[0]}`, dims: [dims[0]], measures: [main], w: 4, h: 4}));
+  if (dims[1]) vis.push(newVisual('bar', {title: `${L(main)} by ${dims[1]}`, dims: [dims[1]], measures: [main], w: 4, h: 5}));
+  if (dims[2] || (date && dims[0])) vis.push(newVisual('donut', {title: `Share of ${L(main)} by ${dims[2] || dims[0]}`, dims: [dims[2] || dims[0]], measures: [main], w: 4, h: 5}));
+  if (profit && dims[1]) vis.push(newVisual('bar', {title: `Margin by ${dims[1]}`, dims: [dims[1]], measures: [{f: 'Margin %', agg: 'sum'}], w: 4, h: 5}));
+  else if (dims[0] && (dims[1] || date)) vis.push(newVisual('matrix', {title: `${L(main)} by ${dims[1] || dims[0]} and ${years > 1 ? 'year' : 'quarter'}`,
+    dims: [dims[1] || dims[0]], legend: date ? `${date.name} (${years > 1 ? 'Year' : 'Quarter'})` : dims[0], measures: [main], heat: true, w: 4, h: 5}));
+  const tdims = dims.slice(-2).reverse().length ? [dims[1] || dims[0], dims[2] || dims[0]].filter((x, i, a) => x && a.indexOf(x) === i) : [];
+  const tms = [main, ...(profit ? [{f: 'Profit', agg: 'sum'}, {f: 'Margin %', agg: 'sum'}] : []), ...nums.slice(1).filter(c => c.name !== cost?.name || !profit).slice(0, 2).map(c => ({f: c.name, agg: 'sum'}))]
+    .filter((m, i, a) => a.findIndex(x => x.f === m.f) === i).slice(0, 5);
+  if (tdims.length || nums.length) vis.push(newVisual('table', {title: tdims.length ? `${tdims.join(' and ')} detail` : 'Totals', dims: tdims, measures: tms, bars: true, w: 12, h: 6}));
   S.pages.push({id: uid(), name: 'Overview · ' + S.active.slice(0, 24), visuals: vis});
   S.pageIdx = S.pages.length - 1; S.selected = null;
   renderAll();
@@ -2822,7 +2933,7 @@ function samplePage3(){
 }
 
 function resetToSample(){
-  const s = makeSample();
+  const s = S.datasets['Sample: Retail Orders'] || makeSample();
   S.datasets[s.name] = s; S.active = s.name;
   S.calcs[s.name] = SAMPLE_CALCS.map(c => ({...c})); S.fmt[s.name] = {...SAMPLE_FMT};
   buildModel();
@@ -3301,35 +3412,19 @@ function save(){
   return true;
 }
 function init(){
-  const s = makeSample();
-  S.datasets[s.name] = s;
-  let saved = store.get(), migrated = false;
-  if (!saved){ saved = store.old(); migrated = !!saved; }
-  if (saved && Array.isArray(saved.pages)){
+  const saved = store.get();
+  if (saved && Array.isArray(saved.reports) && saved.reports.length){
     for (const d of saved.datasets || []) S.datasets[d.name] = d;
     S.calcs = saved.calcs || {}; S.fmt = saved.fmt || {};
-    if (!S.calcs[s.name]) S.calcs[s.name] = SAMPLE_CALCS.map(c => ({...c}));
-    if (!S.fmt[s.name]) S.fmt[s.name] = {...SAMPLE_FMT};
-    S.active = S.datasets[saved.active] ? saved.active : s.name;
-    S.pages = saved.pages.length ? saved.pages : sampleReport();
-    for (const c of SAMPLE_CALCS) if (!S.calcs[s.name].some(x => x.name === c.name)) S.calcs[s.name].push({...c});
-    if (migrated && S.active === s.name) S.pages.push(samplePage3());
-    if ((saved.v || 1) < 3 && S.active === s.name && !S.pages.some(pg => pg.name === 'Order details')){ const d = sampleDetailPage(); S.pages.push(d); wireDetail(S.pages, d); }
-    S.dt = saved.dt || null;
-    S.pageIdx = clamp(saved.pageIdx || 0, 0, S.pages.length - 1);
-    S.sel = Object.fromEntries(Object.entries(saved.sel || {}).map(([k, a]) => [k, new Set(a)]));
-    if (Array.isArray(saved.reports) && saved.reports.length){
-      REPORTS = saved.reports;
-      loadReport(REPORTS.find(r => r.id === saved.current) || REPORTS[0]);
-      return;
+    if (S.datasets['Sample: Retail Orders'] === undefined && saved.reports.some(r => r.active === 'Sample: Retail Orders')){
+      const smp = makeSample(); S.datasets[smp.name] = smp;
+      S.calcs[smp.name] ||= SAMPLE_CALCS.map(c => ({...c})); S.fmt[smp.name] ||= {...SAMPLE_FMT};
     }
-    REPORTS = [{id: uid(), name: S.active === s.name ? 'Retail sample' : S.active}];
-    S.reportId = REPORTS[0].id;
-    buildModel(); renderAll();
-  } else {
-    REPORTS = [{id: uid(), name: 'Retail sample'}]; S.reportId = REPORTS[0].id;
-    resetToSample();
+    REPORTS = saved.reports;
+    loadReport(REPORTS.find(r => r.id === saved.current) || REPORTS[0]);
+    return;
   }
+  blankStart();
 }
 /* ============================== Miyar server ==============================
    When the app is served by Miyar server (server/ in the repository), people sign in with their company
@@ -3408,6 +3503,7 @@ async function srvFlush(){
     for (const id of [...SRV.dsIds]) if (!liveDs.has(id)){ await api('DELETE', `datasets/${id}`).catch(e => { if (e.status !== 404) throw e; }); SRV.dsIds.delete(id); }
     for (const r of REPORTS){
       if (SRV.conflict?.r === r) continue;
+      if (!r.active && !(r.pages || []).some(pg => pg.visuals.length)) continue;
       const key = repKey(r);
       if (SRV.saved[r.id] === key) continue;
       try {
@@ -3531,8 +3627,6 @@ async function detectServer(){
   } catch { return null; }
 }
 async function initServer(){
-  const s = makeSample();
-  S.datasets[s.name] = s; S.calcs[s.name] = SAMPLE_CALCS.map(c => ({...c})); S.fmt[s.name] = {...SAMPLE_FMT};
   const [dl, rl] = await Promise.all([api('GET', 'datasets'), api('GET', 'reports?full=1')]);
   for (const m of dl.datasets){
     S.datasets[m.name] = {name: m.name, columns: m.columns, rows: null, raw: null, source: m.source || undefined, serverId: m.id, version: m.version, rowCount: m.row_count};
@@ -3540,14 +3634,14 @@ async function initServer(){
     SRV.dsIds.add(m.id); SRV.dsMeta[m.name] = dsKey(S.datasets[m.name]);
   }
   REPORTS = rl.reports.map(r => ({id: r.id, name: r.name, active: r.content.active, pages: r.content.pages, version: r.version}));
+  if (REPORTS.some(r => r.active === 'Sample: Retail Orders')){
+    const smp = makeSample(); S.datasets[smp.name] = smp; S.calcs[smp.name] = SAMPLE_CALCS.map(c => ({...c})); S.fmt[smp.name] = {...SAMPLE_FMT};
+  }
   for (const r of REPORTS){ SRV.saved[r.id] = repKey(r); SRV.repIds.add(r.id); }
   document.body.classList.toggle('readonly', !canEdit());
   renderUser(); setSync('saved');
-  if (!REPORTS.length){
-    REPORTS = [{id: uid(), name: 'Retail sample'}]; S.reportId = REPORTS[0].id;
-    resetToSample();
-    if (canEdit()) toast('Welcome to Miyar. This sample report is shared with your organisation; import your own data from Data → Import data.');
-  } else {
+  if (!REPORTS.length){ blankStart(); return; }
+  else {
     let last = null; try { last = localStorage.getItem('miyar-last-report'); } catch {}
     loadReport(REPORTS.find(r => r.id === last) || REPORTS[0]);
   }
