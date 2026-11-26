@@ -17,24 +17,28 @@ It needs an internet connection the first time, to load these libraries from cdn
 
 - Import Excel, PDF tables, CSV/TSV, JSON and HTML tables, with a preview before loading
 - 27 visual types: charts, KPI cards, tables, matrix, slicers, gauges, Sankey diagrams, calendar heatmaps and more
+- Company sign-in (Microsoft Entra ID, Google, Okta, Keycloak or any OpenID Connect provider), shared reports, roles and an activity log with **Basira server**. See [server/README.md](server/README.md)
 - Live data sources through **Basira Gateway**: SAP HANA, SAP S/4HANA and BW (OData), Oracle, Databricks, Snowflake, BigQuery, SQL Server, Azure Synapse, PostgreSQL, Redshift, MySQL and OData feeds. See [gateway/README.md](gateway/README.md)
 - Cross-filtering, drill-down hierarchies, drill-through detail pages, calculated fields
 - Multiple reports and pages, undo/redo/reset, light and dark themes, phone layout
 - Export to PDF and Excel
 
-## Run with Docker (app and gateway)
+## Run it for your organisation (Docker)
+
+Basira server adds company sign-in (any OpenID Connect provider), shared reports and datasets, roles and an activity log. It runs anywhere Docker runs.
 
 ```bash
-cp gateway/connections.example.json gateway/connections.json   # then edit it
-export BASIRA_GATEWAY_KEY=$(openssl rand -hex 24)
+cp .env.example .env                                            # secrets and sign-in settings
+cp gateway/connections.example.json gateway/connections.json    # optional: live data sources
 docker compose up -d --build
 ```
 
-Basira runs at http://localhost:8080 and the gateway at http://localhost:8787. The same two containers run on any cloud that runs containers: AWS ECS or App Runner, Azure Container Apps, Google Cloud Run, or Kubernetes.
+This starts four pieces: the Basira server (web app and API), PostgreSQL, and Basira Gateway for live data. The same setup runs on a company server or in any cloud that runs containers: AWS ECS or App Runner, Azure Container Apps, Google Cloud Run, or Kubernetes. Setup for Microsoft Entra ID, Google, Okta and Keycloak is in [server/README.md](server/README.md).
 
 ## Where data is kept
 
-Everything stays in the user's browser (`localStorage`). Nothing is uploaded. Each browser and device has its own copy, and clearing site data removes it. Large datasets (more than a few MB) may not persist between visits.
+- **With Basira server:** reports, dataset details, users and the activity log are in your PostgreSQL database; dataset rows are in your storage (a Docker volume or an S3 bucket). Live data from SAP, Oracle, Databricks and others stays in those systems and is read through the gateway when someone loads or refreshes it.
+- **Without a server** (opening `index.html` directly or from GitHub Pages): everything stays in the user's own browser (`localStorage`). Nothing is uploaded, nothing is shared, and clearing site data removes it.
 
 ## "Ask your data" chatbot
 

@@ -45,14 +45,15 @@ The `name` is what people see in Basira. Use a **read-only database user** for e
 
 ### With Docker (recommended)
 
-From the repository root, run Basira and the gateway together:
+The repository's `docker-compose.yml` runs the gateway next to Basira server, PostgreSQL and the web app (see the main README). The gateway is only reachable inside the Docker network; Basira server calls it with `BASIRA_GATEWAY_KEY` from `.env`, so people's browsers never see the key. Put the secrets your `connections.json` refers to in `gateway/.env` (one `NAME=value` per line).
+
+To run the gateway on its own, for example on a machine inside the network where your databases are:
 
 ```bash
-export BASIRA_GATEWAY_KEY=$(openssl rand -hex 24)   # keep this; people enter it in Basira
-docker compose up -d --build
+docker build -t basira-gateway ./gateway
+docker run -d -p 8787:8787 -e BASIRA_GATEWAY_KEY=your-long-random-key \
+  -v $PWD/gateway/connections.json:/app/connections.json:ro --env-file gateway/.env basira-gateway
 ```
-
-Basira opens at http://localhost:8080 and the gateway listens on http://localhost:8787. Put the secrets your `connections.json` refers to in `gateway/.env` (one `NAME=value` per line).
 
 ### With Node.js 22.13 or later
 
@@ -66,7 +67,7 @@ BASIRA_GATEWAY_KEY=your-long-random-key ALLOWED_ORIGINS=https://yourname.github.
 
 ## 3. Connect from Basira
 
-In Basira open **Data → Data sources**, enter the gateway address and access key, click **Connect**, choose a source, then pick a table or write a query and click **Preview**. Loaded data opens as a new report, and **Refresh from …** in the Fields pane reloads it later.
+With Basira server, the connection is already made: editors open **Data → Data sources** and pick a source. Without a server, open **Data → Data sources**, enter the gateway address and access key, click **Connect**, choose a source, then pick a table or write a query and click **Preview**. Loaded data opens as a new report, and **Refresh from …** in the Fields pane reloads it later.
 
 Live connections work in the self-hosted Basira (GitHub Pages, Docker, your own server). Inside claude.ai, pages cannot reach other servers.
 

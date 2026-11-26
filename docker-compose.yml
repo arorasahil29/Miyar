@@ -1,25 +1,74 @@
-# Runs Basira (static web app) and Basira Gateway (live data connections) as two containers.
-#   export BASIRA_GATEWAY_KEY=$(openssl rand -hex 24)
+# Basira for one organisation: web app + API, PostgreSQL, and the data gateway.
+#   cp .env.example .env            # then fill it in
 #   docker compose up -d --build
+# Open PUBLIC_URL (http://localhost:8080 by default) and sign in with your company account.
 services:
-  web:
-    image: nginx:1.27-alpine
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
     ports:
-      - "8080:80"
+      - "${HTTP_PORT:-8080}:8080"
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
+      DATABASE_URL: postgres://basira:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/basira
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      ORG_NAME: ${ORG_NAME:-My organisation}
+      AUTH_MODE: ${AUTH_MODE:-oidc}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_PROVIDER_NAME: ${OIDC_PROVIDER_NAME:-your company account}
+      OIDC_SCOPES: ${OIDC_SCOPES:-openid email profile}
+      OIDC_ROLE_CLAIM: ${OIDC_ROLE_CLAIM:-groups}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      ADMIN_GROUPS: ${ADMIN_GROUPS:-}
+      EDITOR_GROUPS: ${EDITOR_GROUPS:-}
+      DEFAULT_ROLE: ${DEFAULT_ROLE:-viewer}
+      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS:-}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+      GATEWAY_URL: http://gateway:8787
+      GATEWAY_KEY: ${BASIRA_GATEWAY_KEY:?Set BASIRA_GATEWAY_KEY in .env}
     volumes:
-      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - basira-files:/data
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: basira
+      POSTGRES_USER: basira
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - basira-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U basira -d basira"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # Only the server talks to the gateway; it is not published outside the Docker network.
   gateway:
     build: ./gateway
-    ports:
-      - "8787:8787"
     environment:
-      BASIRA_GATEWAY_KEY: ${BASIRA_GATEWAY_KEY:?Set BASIRA_GATEWAY_KEY first}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
+      BASIRA_GATEWAY_KEY: ${BASIRA_GATEWAY_KEY:?Set BASIRA_GATEWAY_KEY in .env}
     env_file:
       - path: ./gateway/.env
         required: false
     volumes:
       - ./gateway/connections.json:/app/connections.json:ro
     restart: unless-stopped
+
+volumes:
+  basira-db:
+  basira-files:

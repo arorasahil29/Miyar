@@ -200,7 +200,7 @@ table.grid .bar{display:inline-block;height:6px;border-radius:0 3px 3px 0;backgr
 textarea.code{width:100%;min-height:160px;font-family:var(--f-data);font-size:12px;padding:10px;border:1px solid var(--line2);border-radius:8px;background:var(--raise);resize:vertical}
 .err{color:var(--bad);font-size:12px;margin-top:6px}
 .ok{color:var(--good);font-size:12px;margin-top:6px}
-.dropzone{border:1.5px dashed var(--line2);border-radius:10px;padding:22px;text-align:center;color:var(--ink2);margin-bottom:14px}
+.dropzone{display:block;cursor:pointer;border:1.5px dashed var(--line2);border-radius:10px;padding:22px;text-align:center;color:var(--ink2);margin-bottom:14px}
 .dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
 .calc-list{display:flex;flex-direction:column;gap:6px;margin-top:16px}
 .calc-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;align-items:center}
@@ -329,6 +329,25 @@ body.exporting .card.sel{border-color:var(--line);box-shadow:var(--shadow)}
   .brand small{display:none}
   .actions .lbl-txt{display:none}
 }
+/* server mode */
+.sync{font-size:12px;color:var(--ink3);white-space:nowrap;border:0;background:none;padding:4px 6px;border-radius:6px}
+.sync.err,.sync.conflict{color:var(--bad);font-weight:600;cursor:pointer}
+.sync.ro{color:var(--ink2);border:1px solid var(--line2)}
+.avatar{width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:11px;font-weight:600;flex:none}
+.signin{position:fixed;inset:0;z-index:90;background:var(--bg);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.signin-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:32px 28px;width:min(400px,100%);text-align:center;box-shadow:var(--shadow)}
+.signin-card h1{font-family:var(--f-head);font-size:26px;margin:12px 0 2px;letter-spacing:-.01em}
+.signin-card p{color:var(--ink2);line-height:1.5;margin:6px 0}
+.signin-card .btn{width:100%;justify-content:center;padding:10px 14px;margin-top:18px;font-size:14px}
+.role{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:600;border-radius:4px;padding:1px 6px;background:var(--raise);border:1px solid var(--line);color:var(--ink2)}
+body.readonly #btnAdd,body.readonly #btnAuto,body.readonly #buildPane,body.readonly #btnBuild,body.readonly .tab-add,body.readonly .tab-x,body.readonly #dsRefresh,
+body.readonly .card-h [data-act="dup"],body.readonly .card-h [data-act="del"],body.readonly .resize,body.readonly #newCalc,
+body.readonly .dtabs [data-t="import"],body.readonly .dtabs [data-t="sources"],body.readonly .dtabs [data-t="calc"],
+body.readonly .mnav [data-m="add"],body.readonly .mnav [data-m="build"],body.readonly [data-s="import"],body.readonly [data-s="auto"],body.readonly [data-s="addpage"],body.readonly [data-s="rename"],
+body.readonly .ctx [data-r="import"],body.readonly .ctx [data-r="new"],body.readonly .ctx [data-r="rename"],body.readonly .ctx [data-r="close"]{display:none!important}
+body.readonly .work{grid-template-columns:220px minmax(0,1fr)}
+@media (max-width:900px){body.readonly .work{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){body.readonly .mnav{grid-template-columns:repeat(3,1fr)}}
 /* phone layout */
 .only-phone{display:none!important}
 .mnav{display:none}
@@ -393,6 +412,7 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
       Basira <small lang="ar" dir="rtl" style="text-transform:none;letter-spacing:0;font-size:13px">بصيرة</small>
     </div>
     <button class="btn rep-btn" id="btnReports" type="button" aria-haspopup="menu" title="Switch between your reports"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M2 5.5h12"/></svg><span id="repName"></span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:10px"><path d="M4 6l4 4 4-4"/></svg></button>
+    <button class="sync" id="syncState" type="button" hidden></button>
     <button class="btn only-phone" id="mUndo" type="button" aria-label="Undo" title="Undo"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5.5 3L2.5 6l3 3"/><path d="M2.5 6h7a4 4 0 0 1 0 8H7"/></svg></button>
     <nav class="tabs" id="tabs" aria-label="Report pages"></nav>
     <div class="actions">
@@ -408,6 +428,7 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
       <button class="btn" id="btnReport" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1.5h5.5L13 5v9.5H4z M9.5 1.5V5H13"/></svg><span class="lbl-txt">Report</span></button>
       <button class="btn" id="btnExport" type="button" title="Export to PDF or Excel"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8m-3.5-3.5L8 10l3.5-3.5M2.5 11v2.5h11V11"/></svg><span class="lbl-txt">Export</span></button>
       <button class="btn" id="btnTheme" type="button" aria-label="Theme"></button>
+      <button class="btn" id="btnUser" type="button" hidden aria-haspopup="menu"></button>
       <button class="btn primary" id="btnAdd" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v10M3 8h10"/></svg>Visual</button>
       <button class="btn only-narrow" id="btnBuild" type="button">Build</button>
     </div>
@@ -631,7 +652,24 @@ function toJs(expr){
     .replace(/(^|[^<>!=])=(?!=)/g, '$1==')
     .replace(/\bAND\b/gi, '&&').replace(/\bOR\b/gi, '||').replace(/\bNOT\b/gi, '!');
 }
+/* Formulas are compiled to JavaScript, so they are checked first: only [fields], numbers, quoted text, operators
+   and the listed function names may appear. No property access, brackets, braces or other names, so a formula
+   shared in a report cannot run arbitrary code in someone else's browser. */
+const CALC_NAMES = new Set([...HK, 'SUM', 'AVG', 'MIN', 'MAX', 'COUNT', 'DCOUNT', 'MEDIAN']);
+function checkExpr(expr){
+  // A [field] is always rewritten to r["field"], so it can never become property access on what precedes it.
+  let t = String(expr).replace(/\[[^\]]*\]/g, ' 0 ').replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, ' 0 ');
+  if (/[`{};\[\]\\#@$]/.test(t)) throw new Error('Use only field names in [brackets], numbers, text in quotes, operators and the listed functions.');
+  t = t.replace(/\b\d+(?:\.\d+)?(?:e[-+]?\d+)?\b|\B\.\d+\b/gi, ' 0 ');
+  if (t.includes('.')) throw new Error('Formulas cannot contain dots outside numbers, field names or quoted text.');
+  for (const w of t.match(/[A-Za-z_]\w*/g) || []){
+    if (CALC_NAMES.has(w) || /^(and|or|not)$/i.test(w) || /^(true|false|null)$/.test(w)) continue;
+    throw new Error(`“${w}” is not a field or function. Put field names in [square brackets].`);
+  }
+  if (/=\s*>/.test(t)) throw new Error('That operator is not allowed in formulas.');
+}
 function compileCalc(c){
+  checkExpr(c.expr);
   const isMeasure = new RegExp(MEASURE_RE.source, 'i').test(c.expr);
   if (isMeasure){
     let js = c.expr.replace(MEASURE_RE, (_, fn, f) => `__A(${JSON.stringify(fn.toLowerCase())},${JSON.stringify(f)},rows)`);
@@ -647,7 +685,7 @@ function compileCalc(c){
 function buildModel(){
   const d = ds();
   FIELDS = []; colorCache.clear();
-  if (!d){ ROWS = []; FMAP = new Map(); return; }
+  if (!d || !d.rows){ ROWS = []; FMAP = new Map(); return; }
   const dateCols = d.columns.filter(c => c.type === 'date');
   for (const c of d.columns){
     FIELDS.push({name:c.name, type:c.type, role: c.type === 'number' ? 'measure' : 'dim', src:'col'});
@@ -1716,6 +1754,7 @@ function addVisual(type, extra){
   return v;
 }
 function addFieldTo(v, fname, wellHint){
+  if (!canEdit()) return;
   const fd = FMAP.get(fname); if (!fd) return;
   const t = TYPES[v.type];
   let well = wellHint;
@@ -1742,6 +1781,7 @@ function addFieldTo(v, fname, wellHint){
   changed();
 }
 function quickVisual(f){
+  if (!canEdit()) return;
   const fd = FMAP.get(f);
   if (fd.role === 'measure') return addVisual('kpi', {measures:[{f, agg: defaultAgg(f)}]});
   if (fd.type === 'date') return addVisual('column', {dims: DATE_HIER.map(p => `${f} (${p})`), measures:[{f: RECORDS, agg:'count'}], drillMode: true});
@@ -1758,6 +1798,7 @@ function deletePage(i){
   toast(`Deleted page “${pg.name}” and its ${pg.visuals.length} visual${pg.visuals.length === 1 ? '' : 's'}.`, 'Undo', undo);
 }
 function removeVisual(id){
+  if (!canEdit()) return;
   const p = page(); const i = p.visuals.findIndex(v => v.id === id); if (i < 0) return;
   const [v] = p.visuals.splice(i, 1);
   if (S.selected === id) S.selected = null;
@@ -1937,7 +1978,8 @@ const SI = {
   import: '<path d="M8 10V2m-3.5 3.5L8 2l3.5 3.5M2.5 11v2.5h11V11"/>', auto: '<path d="M8 1.5l1.6 3.9 3.9 1.6-3.9 1.6L8 12.5 6.4 8.6 2.5 7l3.9-1.6z"/>',
   export: '<path d="M8 2v8m-3.5-3.5L8 10l3.5-3.5M2.5 11v2.5h11V11"/>', file: '<path d="M4 1.5h5.5L13 5v9.5H4z M9.5 1.5V5H13"/>',
   theme: '<circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11a5.5 5.5 0 0 0 0-11z" fill="currentColor"/>', rename: '<path d="M2.5 13.5h3l7.5-7.5-3-3-7.5 7.5z"/>',
-  page: '<path d="M4 1.5h8v13H4z"/><path d="M8 5.5v5M5.5 8h5"/>', reports: '<rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M2 5.5h12"/>',
+  page: '<path d="M4 1.5h8v13H4z"/><path d="M8 5.5v5M5.5 8h5"/>',
+  user: '<circle cx="8" cy="5.5" r="2.8"/><path d="M2.5 14c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/>', logout: '<path d="M6 2.5H3v11h3M10.5 5L13.5 8l-3 3M13.5 8H6"/>', reports: '<rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M2 5.5h12"/>',
 };
 let sheetResetArmed = false;
 function openSheet(){
@@ -1947,6 +1989,7 @@ function openSheet(){
   $('#sheetRoot').innerHTML = `<div class="sheet-bg" data-s="close"></div><div class="sheet" role="dialog" aria-label="More actions"><div class="grab"></div>
     <h4>Edit</h4><div class="g">${it('undo', 'Undo', 'undo', HIST.i <= 0 ? 'disabled' : '')}${it('redo', 'Redo', 'redo', HIST.i >= HIST.stack.length - 1 ? 'disabled' : '')}${it('reset', sheetResetArmed ? 'Tap again to reset' : 'Reset report', 'reset', (canReset ? '' : 'disabled') + (sheetResetArmed ? ' class="it warn"' : ''))}</div>
     <h4>Data</h4><div class="g">${it('data', 'View data', 'data')}${it('import', 'Import file', 'import')}${it('auto', 'Auto-build page', 'auto')}</div>
+    ${SRV.on ? `<h4>Account · ${esc(SRV.me.name || SRV.me.email || '')}</h4><div class="g">${SRV.me.role === 'admin' ? it('users', 'Users & roles', 'user') + it('audit', 'Activity log', 'file') : ''}${it('signout', 'Sign out', 'logout')}</div>` : ''}
     <h4>Report</h4><div class="g">${it('reports', 'Switch report', 'reports')}${it('rename', 'Rename page', 'rename')}${it('addpage', 'Add page', 'page')}${it('export', 'Export PDF / Excel', 'export')}${it('file', 'Report file', 'file')}${it('theme', 'Theme: ' + {auto: 'Auto', light: 'Light', dark: 'Dark'}[themePref], 'theme')}</div></div>`;
 }
 function closeSheet(){ $('#sheetRoot').innerHTML = ''; sheetResetArmed = false; }
@@ -1968,6 +2011,9 @@ $('#sheetRoot').addEventListener('click', e => {
   if (k === 'reports') openReportsMenu();
   if (k === 'addpage') $('#addPage')?.click();
   if (k === 'rename') renamePage();
+  if (k === 'users') openUsers();
+  if (k === 'audit') openAudit();
+  if (k === 'signout') signOut();
 });
 function renamePage(){
   const pg = page();
@@ -2100,6 +2146,7 @@ function parseAny(text, filename = ''){
 }
 function switchDataset(name){
   if (!S.datasets[name]) return;
+  if (!S.datasets[name].rows){ toast(`Loading “${name}”…`); fetchRows(name).then(() => switchDataset(name), e => toast(e.message)); return; }
   S.active = name; S.sel = {}; buildModel(); renderAll();
 }
 
@@ -2138,7 +2185,7 @@ function openData(tab = 'table', extra = null){
       const c = d.columns[+s.dataset.ct]; c.type = s.value;
       const src = d.raw || d.rows;
       d.rows = d.rows.map((r, i) => ({...r, [c.name]: (() => { const v = (src[i] ?? r)[c.name]; if (v == null || v === '') return null; return c.type === 'number' ? toNumber(v) : c.type === 'date' ? toDate(v) : String(v); })()}));
-      buildModel(); renderAll(); openData('cols');
+      d.dirtyRows = true; buildModel(); renderAll(); openData('cols');
     });
     body.querySelectorAll('[data-cf]').forEach(s => s.onchange = () => { fmts()[s.dataset.cf] = s.value; renderAll(); });
   }
@@ -2186,7 +2233,7 @@ function openData(tab = 'table', extra = null){
         <textarea class="code" id="pText" style="margin-top:8px" placeholder="Month,Region,Sales&#10;2025-01,East,12000&#10;2025-01,West,9800"></textarea>
         <button class="btn" id="pLoad" type="button" style="margin-top:8px">Preview pasted data</button></details>
       <h4 style="margin:18px 0 8px;font-family:var(--f-head)">Loaded datasets</h4>
-      <div class="calc-list" style="margin-top:0">${Object.values(S.datasets).map(x => `<div class="calc-item"><div><b>${esc(x.name)}</b> ${x.name === S.active ? '<span class="tag">Active</span>' : ''}<br><span class="hint">${x.rows.length.toLocaleString()} rows · ${x.columns.length} columns${x.source ? ` · from ${esc(sourceLabel(x.source))}` : ''}</span></div><div style="display:flex;gap:4px">${x.source ? `<button class="btn sm" data-refresh="${esc(x.name)}" type="button">Refresh</button>` : ''}${x.name !== S.active ? `<button class="btn sm" data-use="${esc(x.name)}" type="button">Use</button>` : ''}${!x.sample ? `<button class="btn sm danger" data-rmds="${esc(x.name)}" type="button">Remove</button>` : ''}</div></div>`).join('')}</div>`;
+      <div class="calc-list" style="margin-top:0">${Object.values(S.datasets).map(x => `<div class="calc-item"><div><b>${esc(x.name)}</b> ${x.name === S.active ? '<span class="tag">Active</span>' : ''}<br><span class="hint">${(x.rows?.length ?? x.rowCount ?? 0).toLocaleString()} rows · ${x.columns.length} columns${x.source ? ` · from ${esc(sourceLabel(x.source))}` : ''}</span></div><div style="display:flex;gap:4px">${x.source ? `<button class="btn sm" data-refresh="${esc(x.name)}" type="button">Refresh</button>` : ''}${x.name !== S.active ? `<button class="btn sm" data-use="${esc(x.name)}" type="button">Use</button>` : ''}${!x.sample ? `<button class="btn sm danger" data-rmds="${esc(x.name)}" type="button">Remove</button>` : ''}</div></div>`).join('')}</div>`;
     const fi = $('#fileIn'), dz = $('#dz'), prev = $('#pPrev');
     const fail = e => { prev.innerHTML = `<p class="err">Could not read that file: ${esc(e.message || e)}</p>`; };
     const readFile = async f => {
@@ -2386,6 +2433,7 @@ const IN_CLAUDE = !!window.claude;
 const sourceLabel = src => src.kind === 'web' ? (() => { try { return new URL(src.url).host; } catch { return 'web'; } })() : src.connection;
 
 async function gw(path, body){
+  if (SRV.on) return body ? api('POST', 'gateway' + path, body) : api('GET', 'gateway' + path);
   if (!GW.url) throw new Error('Connect to your gateway first.');
   let r;
   try {
@@ -2399,7 +2447,7 @@ async function gw(path, body){
 async function connectGateway(){
   SRC.state = 'busy'; SRC.msg = 'Connecting…'; drawGwState();
   try {
-    await gw('/health');
+    if (!SRV.on) await gw('/health');
     const j = await gw('/connections');
     SRC.conns = j.connections || []; SRC.tables = {};
     SRC.state = 'ok'; SRC.msg = `Connected · ${SRC.conns.length} connection${SRC.conns.length === 1 ? '' : 's'} available`;
@@ -2411,14 +2459,15 @@ function renderSources(body){
   SRC.sel = null;
   body.innerHTML = `<p>Connect live data from SAP, Oracle, Databricks and other databases or cloud platforms. Basira reaches them through <b>Basira Gateway</b>, a small open-source service you run next to your data, on a server, in Docker or in the cloud. The gateway keeps the passwords and runs read-only queries; the browser never sees credentials.</p>
     ${IN_CLAUDE ? `<p class="err">Live connections work only in the self-hosted version of Basira (for example on GitHub Pages or your own server). Inside Claude, pages cannot reach other servers. Files still work from <b>Import data</b>.</p>` : ''}
-    <div class="gw"><h4>Gateway</h4>
+    ${SRV.on ? `<div class="gw"><h4>Gateway</h4><span id="gwState" class="state"></span><p class="hint" style="margin:8px 0 0;font-size:12px">${SRV.cfg.gateway ? 'Connected through the Basira server. Your administrator sets up the data connections on the gateway.' : 'No gateway is set up on this Basira server yet. An administrator can add one with GATEWAY_URL and GATEWAY_KEY.'}</p></div>` : `<div class="gw"><h4>Gateway</h4>
       <div class="form-row"><input type="url" id="gwUrl" placeholder="https://gateway.example.com" value="${esc(GW.url)}" aria-label="Gateway address" ${IN_CLAUDE ? 'disabled' : ''}>
       <input type="password" id="gwKey" placeholder="Access key" value="${esc(GW.key)}" aria-label="Gateway access key" autocomplete="off" ${IN_CLAUDE ? 'disabled' : ''}>
       <button class="btn primary" id="gwGo" type="button" ${IN_CLAUDE ? 'disabled' : ''}>Connect</button></div>
       <span id="gwState" class="state"></span>
-      <p class="hint" style="margin:8px 0 0;font-size:12px">Set the gateway up with <code>gateway/README.md</code> in the Basira repository. The access key is stored in this browser only.</p></div>
+      <p class="hint" style="margin:8px 0 0;font-size:12px">Set the gateway up with <code>gateway/README.md</code> in the Basira repository. The access key is stored in this browser only.</p></div>`}
     <div id="srcBody" class="src"></div>`;
   drawGwState();
+  if (SRV.on){ drawSrc(); if (SRV.cfg.gateway && SRV.me.role !== 'viewer') connectGateway(); else { SRV.cfg.gateway || (SRV.msg = ''); } return; }
   $('#gwGo').onclick = () => {
     GW.url = $('#gwUrl').value.trim(); GW.key = $('#gwKey').value.trim();
     try { localStorage.setItem(GW_KEY, JSON.stringify(GW)); } catch {}
@@ -2518,7 +2567,7 @@ async function refreshDataset(name, btn){
     const {names, records} = await runSource(d.source);
     const prevType = new Map(d.columns.map(c => [c.name, c.type]));
     const cols = inferColumns(names, records).map(c => prevType.has(c.name) ? {...c, type: prevType.get(c.name)} : c);
-    d.columns = cols; d.raw = records; d.rows = coerce(records, cols); d.source.refreshed = new Date().toISOString();
+    d.columns = cols; d.raw = records; d.rows = coerce(records, cols); d.source.refreshed = new Date().toISOString(); d.dirtyRows = true; d.justRefreshed = true;
     if (name === S.active){ buildModel(); renderAll(); } else save();
     toast(`Refreshed “${name}”: ${records.length.toLocaleString()} rows.`);
   } catch (e){ toast(`Could not refresh “${name}”: ${e.message}`); }
@@ -3126,7 +3175,14 @@ function stashReport(){
     hist: {stack: HIST.stack, i: HIST.i}});
 }
 function loadReport(r){
+  const want = S.datasets[r.active] ? r.active : Object.keys(S.datasets)[0];
+  if (S.datasets[want] && !S.datasets[want].rows){
+    toast(`Loading “${want}”…`);
+    fetchRows(want).then(() => { $('#toastRoot').innerHTML = ''; loadReport(r); }, e => toast(e.message));
+    return;
+  }
   S.reportId = r.id;
+  try { if (SRV.on) localStorage.setItem('basira-last-report', r.id); } catch {}
   S.active = S.datasets[r.active] ? r.active : Object.keys(S.datasets)[0];
   S.pages = r.pages && r.pages.length ? r.pages : [{id: uid(), name: 'Page 1', visuals: []}];
   S.pageIdx = clamp(r.pageIdx || 0, 0, S.pages.length - 1);
@@ -3231,6 +3287,7 @@ function histButtons(){
 }
 function save(){
   clearTimeout(saveTimer);
+  if (SRV.on){ saveTimer = setTimeout(() => { stashReport(); commit(); srvSave(); }, 250); return true; }
   saveTimer = setTimeout(() => {
     const userDs = Object.values(S.datasets).filter(d => !d.sample).map(d => ({name: d.name, columns: d.columns, rows: d.rows, source: d.source}));
     stashReport();
@@ -3273,10 +3330,244 @@ function init(){
     resetToSample();
   }
 }
+/* ============================== Basira server ==============================
+   When the app is served by Basira server (server/ in the repository), people sign in with their company
+   account and reports and datasets are shared through the server. Anywhere else (a plain file, GitHub Pages,
+   inside Claude) the app keeps everything in the browser as before. */
+const SRV = {on: false, cfg: null, me: null, saved: {}, dsMeta: {}, dsIds: new Set(), repIds: new Set(), timer: null, busy: false, again: false, conflict: null};
+const canEdit = () => !SRV.on || SRV.me?.role === 'admin' || SRV.me?.role === 'editor';
+async function api(method, p, body, opt = {}){
+  let r;
+  try {
+    r = await fetch('api/' + p, {method, credentials: 'same-origin',
+      headers: {'X-Basira': '1', ...(body !== undefined ? {'Content-Type': 'application/json'} : {}), ...(opt.headers || {})},
+      body: opt.raw !== undefined ? opt.raw : body !== undefined ? JSON.stringify(body) : undefined});
+  } catch { const e = new Error('The Basira server could not be reached. Check your connection.'); e.status = 0; throw e; }
+  let j = null; try { j = await r.json(); } catch {}
+  if (!r.ok){ const e = new Error(j?.error || `The server replied ${r.status}.`); e.status = r.status; e.data = j; throw e; }
+  return j;
+}
+async function apiBig(method, p, obj){   // large uploads are gzip-compressed in the browser when it can
+  const text = JSON.stringify(obj);
+  if (!window.CompressionStream || text.length < 256e3) return api(method, p, undefined, {raw: text, headers: {'Content-Type': 'application/json'}});
+  const blob = await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))).blob();
+  return api(method, p, undefined, {raw: blob, headers: {'Content-Type': 'application/json', 'Content-Encoding': 'gzip'}});
+}
+async function fetchRows(name){
+  const d = S.datasets[name]; if (!d || d.rows) return;
+  d._loading ||= (async () => {
+    const r = await fetch('api/datasets/' + encodeURIComponent(d.serverId) + '/rows', {credentials: 'same-origin'});
+    if (r.status === 401){ showSignIn('expired'); throw new Error('Your session has ended. Sign in again.'); }
+    if (!r.ok) throw new Error(`Could not load “${name}” from the server.`);
+    d.rows = await r.json(); d.raw = d.rows;
+  })().finally(() => { d._loading = null; });
+  return d._loading;
+}
+const calcsOut = name => (S.calcs[name] || []).map(({name, expr, fmt}) => ({name, expr, fmt}));
+const dsKey = d => JSON.stringify({c: calcsOut(d.name), f: S.fmt[d.name] || {}, k: d.columns});
+const repContent = r => ({active: r.active, pages: (r.pages || []).map(pg => ({...pg, visuals: pg.visuals.map(({_q, ...v}) => v)}))});
+const repKey = r => JSON.stringify({n: r.name, c: repContent(r)});
+
+function setSync(state, msg){
+  const el = $('#syncState'); if (!el) return;
+  el.hidden = !SRV.on;
+  el.className = 'sync';
+  if (!canEdit()){ el.classList.add('ro'); el.textContent = 'View only'; el.title = 'You can explore and filter reports but not change them. Ask an administrator for editor access.'; return; }
+  const T = {pending: ['Unsaved changes', ''], saving: ['Saving…', ''], saved: ['All changes saved', ''], error: ['Not saved · retry', 'err'], conflict: ['Changed by someone else', 'conflict']}[state] || ['', ''];
+  el.textContent = T[0]; if (T[1]) el.classList.add(T[1]);
+  el.title = msg || (state === 'saved' ? 'Saved to the Basira server' : '');
+}
+function srvSave(){
+  if (!SRV.on || !canEdit()) return;
+  clearTimeout(SRV.timer); setSync('pending');
+  SRV.timer = setTimeout(srvFlush, 900);
+}
+async function srvFlush(){
+  if (SRV.busy){ SRV.again = true; return; }
+  SRV.busy = true; setSync('saving');
+  try {
+    stashReport();
+    for (const d of Object.values(S.datasets)){
+      if (d.sample || !d.rows) continue;
+      if (!d.serverId){
+        const m = await apiBig('POST', 'datasets', {name: d.name, columns: d.columns, rows: d.rows, source: d.source || null, calcs: calcsOut(d.name), fmt: S.fmt[d.name] || {}});
+        Object.assign(d, {serverId: m.id, version: m.version, dirtyRows: false});
+        SRV.dsIds.add(m.id); SRV.dsMeta[d.name] = dsKey(d);
+        continue;
+      }
+      if (d.dirtyRows){
+        d.dirtyRows = false;
+        try { const m = await apiBig('PUT', `datasets/${d.serverId}/rows`, {columns: d.columns, rows: d.rows, source: d.source || null, refreshed: !!d.justRefreshed}); d.version = m.version; d.justRefreshed = false; }
+        catch (e){ d.dirtyRows = true; throw e; }
+      }
+      const k = dsKey(d);
+      if (SRV.dsMeta[d.name] !== k){ await api('PATCH', `datasets/${d.serverId}`, {calcs: calcsOut(d.name), fmt: S.fmt[d.name] || {}, columns: d.columns}); SRV.dsMeta[d.name] = k; }
+    }
+    const liveDs = new Set(Object.values(S.datasets).map(d => d.serverId).filter(Boolean));
+    for (const id of [...SRV.dsIds]) if (!liveDs.has(id)){ await api('DELETE', `datasets/${id}`).catch(e => { if (e.status !== 404) throw e; }); SRV.dsIds.delete(id); }
+    for (const r of REPORTS){
+      if (SRV.conflict?.r === r) continue;
+      const key = repKey(r);
+      if (SRV.saved[r.id] === key) continue;
+      try {
+        const out = await api('PUT', `reports/${encodeURIComponent(r.id)}`, {name: r.name, content: repContent(r), version: r.version || 0});
+        r.version = out.version; SRV.saved[r.id] = key; SRV.repIds.add(r.id);
+      } catch (e){
+        if (e.status === 409 && e.data?.report){ SRV.conflict = {r, latest: e.data.report, msg: e.message}; continue; }
+        throw e;
+      }
+    }
+    const live = new Set(REPORTS.map(r => r.id));
+    for (const id of [...SRV.repIds]) if (!live.has(id)){ await api('DELETE', `reports/${encodeURIComponent(id)}`).catch(e => { if (e.status !== 404) throw e; }); SRV.repIds.delete(id); delete SRV.saved[id]; }
+    setSync(SRV.conflict ? 'conflict' : 'saved', SRV.conflict?.msg);
+    if (SRV.conflict) showConflict();
+  } catch (e){
+    setSync('error', e.message);
+    if (e.status === 401) showSignIn('expired');
+    else if (!SRV.errShown){ SRV.errShown = true; toast(`Changes not saved: ${e.message}`, 'Retry', () => { SRV.errShown = false; srvSave(); }); }
+  } finally {
+    SRV.busy = false;
+    if (SRV.again){ SRV.again = false; srvSave(); }
+  }
+}
+function showConflict(){
+  const c = SRV.conflict; if (!c) return;
+  const dlg = modal(`<div class="dlg-h"><h3>This report changed</h3></div>
+    <div class="dlg-b"><p>${esc(c.msg)} Your recent changes to “${esc(c.r.name)}” have not been saved.</p>
+    <div class="form-row"><button class="btn primary" id="cfTheirs" type="button">Load the newer version</button><button class="btn" id="cfMine" type="button">Keep my version and overwrite</button></div></div>`, 'small');
+  $('#cfTheirs').onclick = () => {
+    Object.assign(c.r, c.latest.content, {name: c.latest.name, version: c.latest.version, hist: null});
+    SRV.saved[c.r.id] = repKey(c.r); SRV.conflict = null; closeModal();
+    if (c.r.id === S.reportId) loadReport(c.r); else renderReportBtn();
+    setSync('saved'); toast('Loaded the newer version.');
+  };
+  $('#cfMine').onclick = () => { c.r.version = c.latest.version; SRV.conflict = null; closeModal(); srvSave(); };
+}
+$('#syncState').onclick = () => { if (SRV.conflict) showConflict(); else if ($('#syncState').classList.contains('err')){ SRV.errShown = false; srvSave(); } };
+
+function showSignIn(reason){
+  if ($('#signin')) return;
+  const next = location.pathname + location.search;
+  document.body.insertAdjacentHTML('beforeend', `<div class="signin" id="signin" role="dialog" aria-label="Sign in"><div class="signin-card">
+    <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="12" width="5" height="10" rx="1.5" fill="var(--s1)"/><rect x="9.5" y="6" width="5" height="16" rx="1.5" fill="var(--accent)"/><rect x="17" y="2" width="5" height="20" rx="1.5" fill="var(--s3)"/></svg>
+    <h1>Basira <span lang="ar" style="font-weight:500;color:var(--ink3);font-size:18px">بصيرة</span></h1>
+    <p>${esc(SRV.cfg?.org || '')}</p>
+    ${reason === 'expired' ? '<p class="err">Your session has ended. Sign in again to keep working; changes from the last few seconds may not have been saved.</p>' : ''}
+    <a class="btn primary" href="auth/login?next=${encodeURIComponent(next)}">Sign in with ${esc(SRV.cfg?.provider || 'your company account')}</a>
+    ${SRV.cfg?.authMode === 'dev' ? '<p class="hint" style="font-size:12px;margin-top:14px">Trial mode: this server signs everyone in as an administrator.</p>' : ''}
+  </div></div>`);
+}
+function renderUser(){
+  const b = $('#btnUser'); if (!SRV.on){ b.hidden = true; return; }
+  const n = SRV.me.name || SRV.me.email || '?';
+  const ini = n.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('');
+  b.hidden = false; b.title = `${n} · ${SRV.me.role}`;
+  b.innerHTML = `<span class="avatar">${esc(ini)}</span><span class="lbl-txt">${esc(n.split(' ')[0])}</span>`;
+}
+$('#btnUser').onclick = e => {
+  e.stopPropagation();
+  if ($('.ctx')) return closeMenu();
+  const r = $('#btnUser').getBoundingClientRect(), m = document.createElement('div');
+  m.className = 'ctx'; m.setAttribute('role', 'menu');
+  m.innerHTML = `<div style="padding:8px 10px"><b>${esc(SRV.me.name || '')}</b><br><span class="hint" style="font-size:12px">${esc(SRV.me.email || '')}</span><br><span class="role">${esc(SRV.me.role)}</span> <span class="hint" style="font-size:12px">${esc(SRV.cfg.org)}</span></div><hr>
+    ${SRV.me.role === 'admin' ? '<button type="button" role="menuitem" data-u="users">Users and roles</button><button type="button" role="menuitem" data-u="audit">Activity log</button><hr>' : ''}
+    <button type="button" role="menuitem" data-u="out">Sign out</button>`;
+  document.body.append(m);
+  m.style.left = clamp(r.right - m.offsetWidth, 8, innerWidth - m.offsetWidth - 8) + 'px'; m.style.top = (r.bottom + 6) + 'px';
+  m.addEventListener('click', ev => { const k = ev.target.closest('[data-u]')?.dataset.u; if (!k) return; closeMenu(); if (k === 'users') openUsers(); if (k === 'audit') openAudit(); if (k === 'out') signOut(); });
+};
+document.addEventListener('pointerdown', e => { if (e.target.closest('#btnUser')) e.stopPropagation(); }, true);
+async function signOut(){
+  try { await srvFlush(); } catch {}
+  try {
+    const r = await fetch('auth/logout', {method: 'POST', credentials: 'same-origin', headers: {'X-Basira': '1'}});
+    const j = await r.json(); location.href = j.redirect || './';
+  } catch { location.reload(); }
+}
+async function openUsers(){
+  const dlg = modal(`<div class="dlg-h"><h3>Users and roles</h3><button class="btn ghost" data-x type="button">Close</button></div><div class="dlg-b" id="usrB"><p class="busy">Loading…</p></div>`);
+  dlg.querySelector('[data-x]').onclick = closeModal;
+  try {
+    const j = await api('GET', 'users');
+    const roles = ['viewer', 'editor', 'admin'];
+    $('#usrB').innerHTML = `<p><b>Viewers</b> can open, filter and export reports. <b>Editors</b> can also build reports and import or connect data. <b>Admins</b> can also manage users and see the activity log. People appear here after they first sign in.</p>
+      ${j.managedByGroups ? '<p class="hint">Roles come from groups in your identity provider (ADMIN_GROUPS / EDITOR_GROUPS), so they are updated at each sign-in.</p>' : ''}
+      <div style="overflow:auto"><table class="grid"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Last sign-in</th></tr></thead><tbody>${j.users.map(u => `<tr>
+        <td>${esc(u.name || '')}${u.id === SRV.me.id ? ' <span class="role">you</span>' : ''}</td><td>${esc(u.email || '')}</td>
+        <td><select data-uid="${esc(u.id)}" aria-label="Role for ${esc(u.name || u.email || '')}">${roles.map(r => `<option ${u.role === r ? 'selected' : ''}>${r}</option>`).join('')}</select></td>
+        <td>${u.last_login_at ? esc(new Date(u.last_login_at).toLocaleString()) : '–'}</td></tr>`).join('')}</tbody></table></div><p id="usrMsg"></p>`;
+    $$('#usrB select').forEach(sel => sel.onchange = async () => {
+      const msg = $('#usrMsg');
+      try { await api('PATCH', `users/${sel.dataset.uid}`, {role: sel.value}); msg.className = 'ok'; msg.textContent = 'Role updated. It applies the next time they sign in.'; }
+      catch (e){ msg.className = 'err'; msg.textContent = e.message; openUsers(); }
+    });
+  } catch (e){ $('#usrB').innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+const AUDIT_LABEL = {'user.sign_in': 'Signed in', 'user.sign_out': 'Signed out', 'user.role': 'Changed role', 'report.create': 'Created report', 'report.update': 'Edited report',
+  'report.delete': 'Deleted report', 'dataset.create': 'Added dataset', 'dataset.refresh': 'Refreshed dataset', 'dataset.replace': 'Replaced dataset rows',
+  'dataset.update': 'Edited dataset settings', 'dataset.delete': 'Deleted dataset', 'source.query': 'Queried data source'};
+async function openAudit(){
+  const dlg = modal(`<div class="dlg-h"><h3>Activity log</h3><button class="btn ghost" data-x type="button">Close</button></div><div class="dlg-b" id="audB"><p class="busy">Loading…</p></div>`);
+  dlg.querySelector('[data-x]').onclick = closeModal;
+  try {
+    const j = await api('GET', 'audit?limit=300');
+    const det = a => { const d = a.detail || {}; if (a.action === 'user.role') return `${d.from} → ${d.to}`; if (d.rows != null) return `${Number(d.rows).toLocaleString()} rows`; return ''; };
+    $('#audB').innerHTML = `<p>The latest ${j.entries.length} actions. Repeated edits to the same report within 10 minutes are grouped.</p>
+      <div style="overflow:auto"><table class="grid"><thead><tr><th>When</th><th>Who</th><th>What</th><th>Item</th><th>Details</th></tr></thead><tbody>${j.entries.map(a => `<tr>
+      <td>${esc(new Date(a.at).toLocaleString())}</td><td>${esc(a.user_name || '–')}</td><td>${esc(AUDIT_LABEL[a.action] || a.action)}${a.count > 1 ? ` <span class="hint">×${a.count}</span>` : ''}</td>
+      <td>${esc(a.target_name || '')}</td><td title="${esc(a.detail?.query || '')}">${esc(det(a))}</td></tr>`).join('')}</tbody></table></div>`;
+  } catch (e){ $('#audB').innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+
+async function detectServer(){
+  if (window.claude || location.protocol === 'file:') return null;
+  try {
+    const r = await fetch('api/config', {credentials: 'same-origin', headers: {'X-Basira': '1'}});
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j?.app === 'basira-server' ? j : null;
+  } catch { return null; }
+}
+async function initServer(){
+  const s = makeSample();
+  S.datasets[s.name] = s; S.calcs[s.name] = SAMPLE_CALCS.map(c => ({...c})); S.fmt[s.name] = {...SAMPLE_FMT};
+  const [dl, rl] = await Promise.all([api('GET', 'datasets'), api('GET', 'reports?full=1')]);
+  for (const m of dl.datasets){
+    S.datasets[m.name] = {name: m.name, columns: m.columns, rows: null, raw: null, source: m.source || undefined, serverId: m.id, version: m.version, rowCount: m.row_count};
+    S.calcs[m.name] = m.calcs || []; S.fmt[m.name] = m.fmt || {};
+    SRV.dsIds.add(m.id); SRV.dsMeta[m.name] = dsKey(S.datasets[m.name]);
+  }
+  REPORTS = rl.reports.map(r => ({id: r.id, name: r.name, active: r.content.active, pages: r.content.pages, version: r.version}));
+  for (const r of REPORTS){ SRV.saved[r.id] = repKey(r); SRV.repIds.add(r.id); }
+  document.body.classList.toggle('readonly', !canEdit());
+  renderUser(); setSync('saved');
+  if (!REPORTS.length){
+    REPORTS = [{id: uid(), name: 'Retail sample'}]; S.reportId = REPORTS[0].id;
+    resetToSample();
+    if (canEdit()) toast('Welcome to Basira. This sample report is shared with your organisation; import your own data from Data → Import data.');
+  } else {
+    let last = null; try { last = localStorage.getItem('basira-last-report'); } catch {}
+    loadReport(REPORTS.find(r => r.id === last) || REPORTS[0]);
+  }
+  commit(); histButtons();
+}
+async function boot(){
+  const cfg = await detectServer();
+  if (!cfg){ init(); commit(); histButtons(); return; }
+  SRV.cfg = cfg;
+  try {
+    const me = await api('GET', 'me');
+    SRV.me = me.user; SRV.on = true;
+    await initServer();
+  } catch (e){
+    if (e.status === 401) return showSignIn();
+    document.body.insertAdjacentHTML('beforeend', `<div class="signin"><div class="signin-card"><h1>Basira</h1><p class="err">${esc(e.message)}</p><a class="btn" href="./">Try again</a></div></div>`);
+  }
+}
+window.addEventListener('beforeunload', e => { if (SRV.on && canEdit() && ($('#syncState')?.textContent || '').match(/Unsaved|Saving|Not saved/)){ e.preventDefault(); e.returnValue = ''; } });
+
 applyTheme();
-init();
-commit();
-histButtons();
+boot();
 </script>
 
 </body>
