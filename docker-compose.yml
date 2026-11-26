@@ -1,4 +1,4 @@
-# Basira for one organisation: web app + API, PostgreSQL, and the data gateway.
+# Miyar for one organisation: web app + API, PostgreSQL, and the data gateway.
 #   cp .env.example .env            # then fill it in
 #   docker compose up -d --build
 # Open PUBLIC_URL (http://localhost:8080 by default) and sign in with your company account.
@@ -11,7 +11,7 @@ services:
       - "${HTTP_PORT:-8080}:8080"
     environment:
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
-      DATABASE_URL: postgres://basira:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/basira
+      DATABASE_URL: postgres://miyar:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/miyar
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
       ORG_NAME: ${ORG_NAME:-My organisation}
       AUTH_MODE: ${AUTH_MODE:-oidc}
@@ -34,9 +34,9 @@ services:
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
       GATEWAY_URL: http://gateway:8787
-      GATEWAY_KEY: ${BASIRA_GATEWAY_KEY:?Set BASIRA_GATEWAY_KEY in .env}
+      GATEWAY_KEY: ${MIYAR_GATEWAY_KEY:?Set MIYAR_GATEWAY_KEY in .env}
     volumes:
-      - basira-files:/data
+      - miyar-files:/data
     depends_on:
       db:
         condition: service_healthy
@@ -45,13 +45,13 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: basira
-      POSTGRES_USER: basira
+      POSTGRES_DB: miyar
+      POSTGRES_USER: miyar
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - basira-db:/var/lib/postgresql/data
+      - miyar-db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U basira -d basira"]
+      test: ["CMD-SHELL", "pg_isready -U miyar -d miyar"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -61,7 +61,7 @@ services:
   gateway:
     build: ./gateway
     environment:
-      BASIRA_GATEWAY_KEY: ${BASIRA_GATEWAY_KEY:?Set BASIRA_GATEWAY_KEY in .env}
+      MIYAR_GATEWAY_KEY: ${MIYAR_GATEWAY_KEY:?Set MIYAR_GATEWAY_KEY in .env}
     env_file:
       - path: ./gateway/.env
         required: false
@@ -70,5 +70,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  basira-db:
-  basira-files:
+  miyar-db:
+  miyar-files:

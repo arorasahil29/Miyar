@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Basira: a self-service business intelligence app that runs entirely in the browser.">
+<meta name="description" content="Miyar (معيار): the measure of your business. A self-service business intelligence app.">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-<title>Basira</title>
+<title>Miyar</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
@@ -338,6 +338,7 @@ body.exporting .card.sel{border-color:var(--line);box-shadow:var(--shadow)}
 .signin-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:32px 28px;width:min(400px,100%);text-align:center;box-shadow:var(--shadow)}
 .signin-card h1{font-family:var(--f-head);font-size:26px;margin:12px 0 2px;letter-spacing:-.01em}
 .signin-card p{color:var(--ink2);line-height:1.5;margin:6px 0}
+.signin-card .tagline{color:var(--ink3);font-size:13px;margin-bottom:14px}
 .signin-card .btn{width:100%;justify-content:center;padding:10px 14px;margin-top:18px;font-size:14px}
 .role{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:600;border-radius:4px;padding:1px 6px;background:var(--raise);border:1px solid var(--line);color:var(--ink2)}
 body.readonly #btnAdd,body.readonly #btnAuto,body.readonly #buildPane,body.readonly #btnBuild,body.readonly .tab-add,body.readonly .tab-x,body.readonly #dsRefresh,
@@ -407,9 +408,9 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
 
 <div id="app">
   <header class="top">
-    <div class="brand">
+    <div class="brand" title="Miyar · the measure of your business · مقياس أعمالك">
       <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="12" width="5" height="10" rx="1.5" fill="var(--s1)"/><rect x="9.5" y="6" width="5" height="16" rx="1.5" fill="var(--accent)"/><rect x="17" y="2" width="5" height="20" rx="1.5" fill="var(--s3)"/></svg>
-      Basira <small lang="ar" dir="rtl" style="text-transform:none;letter-spacing:0;font-size:13px">بصيرة</small>
+      Miyar <small lang="ar" dir="rtl" style="text-transform:none;letter-spacing:0;font-size:13px">معيار</small>
     </div>
     <button class="btn rep-btn" id="btnReports" type="button" aria-haspopup="menu" title="Switch between your reports"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M2 5.5h12"/></svg><span id="repName"></span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:10px"><path d="M4 6l4 4 4-4"/></svg></button>
     <button class="sync" id="syncState" type="button" hidden></button>
@@ -2392,7 +2393,7 @@ function showPreview(box, sheets, baseName, source = null){
 }
 
 /* ============================== data sources ==============================
-   Live sources go through Basira Gateway (gateway/ in the repository): a small service the user runs next to
+   Live sources go through Miyar Gateway (gateway/ in the repository): a small service the user runs next to
    their data. It holds the credentials and accepts only read-only queries; the browser never sees passwords. */
 const CONNECTORS = [
   {g:'SAP', cls:'sap', id:'saphana', m:'HA', name:'SAP HANA', types:['saphana'], mode:'sql', desc:'SAP HANA Cloud or on-premise HANA, queried with SQL. Also covers BW/4HANA and S/4HANA databases.'},
@@ -2426,7 +2427,7 @@ const SNIPPET = {
   snowflake: {name: 'Snowflake', type: 'snowflake', account: 'xy12345.eu-west-1', username: '${SNOWFLAKE_USER}', password: '${SNOWFLAKE_PASSWORD}', warehouse: 'COMPUTE_WH', database: 'ANALYTICS', schema: 'PUBLIC'},
   bigquery: {name: 'BigQuery', type: 'bigquery', projectId: 'my-project', keyFilename: '/secrets/service-account.json', location: 'EU'},
 };
-const GW_KEY = 'basira-gateway';
+const GW_KEY = 'miyar-gateway';
 const GW = (() => { try { return JSON.parse(localStorage.getItem(GW_KEY) || 'null') || {url: '', key: ''}; } catch { return {url: '', key: ''}; } })();
 const SRC = {state: 'idle', msg: '', conns: [], sel: null, tables: {}};
 const IN_CLAUDE = !!window.claude;
@@ -2439,7 +2440,7 @@ async function gw(path, body){
   try {
     r = await fetch(GW.url.replace(/\/+$/, '') + path, {method: body ? 'POST' : 'GET',
       headers: {Authorization: 'Bearer ' + GW.key, ...(body ? {'Content-Type': 'application/json'} : {})}, body: body ? JSON.stringify(body) : undefined});
-  } catch { throw new Error(IN_CLAUDE ? 'Live connections only work in the self-hosted version of Basira.' : `Could not reach the gateway at ${GW.url}. Check it is running and that this site is in its ALLOWED_ORIGINS.`); }
+  } catch { throw new Error(IN_CLAUDE ? 'Live connections only work in the self-hosted version of Miyar.' : `Could not reach the gateway at ${GW.url}. Check it is running and that this site is in its ALLOWED_ORIGINS.`); }
   const j = await r.json().catch(() => ({error: `The gateway replied ${r.status}.`}));
   if (!r.ok || j.error) throw new Error(j.error || `The gateway replied ${r.status}.`);
   return j;
@@ -2457,14 +2458,14 @@ async function connectGateway(){
 function drawGwState(){ const el = $('#gwState'); if (el){ el.className = 'state ' + (SRC.state === 'ok' ? 'ok' : SRC.state === 'bad' ? 'bad' : ''); el.textContent = SRC.msg || 'Not connected'; } }
 function renderSources(body){
   SRC.sel = null;
-  body.innerHTML = `<p>Connect live data from SAP, Oracle, Databricks and other databases or cloud platforms. Basira reaches them through <b>Basira Gateway</b>, a small open-source service you run next to your data, on a server, in Docker or in the cloud. The gateway keeps the passwords and runs read-only queries; the browser never sees credentials.</p>
-    ${IN_CLAUDE ? `<p class="err">Live connections work only in the self-hosted version of Basira (for example on GitHub Pages or your own server). Inside Claude, pages cannot reach other servers. Files still work from <b>Import data</b>.</p>` : ''}
-    ${SRV.on ? `<div class="gw"><h4>Gateway</h4><span id="gwState" class="state"></span><p class="hint" style="margin:8px 0 0;font-size:12px">${SRV.cfg.gateway ? 'Connected through the Basira server. Your administrator sets up the data connections on the gateway.' : 'No gateway is set up on this Basira server yet. An administrator can add one with GATEWAY_URL and GATEWAY_KEY.'}</p></div>` : `<div class="gw"><h4>Gateway</h4>
+  body.innerHTML = `<p>Connect live data from SAP, Oracle, Databricks and other databases or cloud platforms. Miyar reaches them through <b>Miyar Gateway</b>, a small open-source service you run next to your data, on a server, in Docker or in the cloud. The gateway keeps the passwords and runs read-only queries; the browser never sees credentials.</p>
+    ${IN_CLAUDE ? `<p class="err">Live connections work only in the self-hosted version of Miyar (for example on GitHub Pages or your own server). Inside Claude, pages cannot reach other servers. Files still work from <b>Import data</b>.</p>` : ''}
+    ${SRV.on ? `<div class="gw"><h4>Gateway</h4><span id="gwState" class="state"></span><p class="hint" style="margin:8px 0 0;font-size:12px">${SRV.cfg.gateway ? 'Connected through the Miyar server. Your administrator sets up the data connections on the gateway.' : 'No gateway is set up on this Miyar server yet. An administrator can add one with GATEWAY_URL and GATEWAY_KEY.'}</p></div>` : `<div class="gw"><h4>Gateway</h4>
       <div class="form-row"><input type="url" id="gwUrl" placeholder="https://gateway.example.com" value="${esc(GW.url)}" aria-label="Gateway address" ${IN_CLAUDE ? 'disabled' : ''}>
       <input type="password" id="gwKey" placeholder="Access key" value="${esc(GW.key)}" aria-label="Gateway access key" autocomplete="off" ${IN_CLAUDE ? 'disabled' : ''}>
       <button class="btn primary" id="gwGo" type="button" ${IN_CLAUDE ? 'disabled' : ''}>Connect</button></div>
       <span id="gwState" class="state"></span>
-      <p class="hint" style="margin:8px 0 0;font-size:12px">Set the gateway up with <code>gateway/README.md</code> in the Basira repository. The access key is stored in this browser only.</p></div>`}
+      <p class="hint" style="margin:8px 0 0;font-size:12px">Set the gateway up with <code>gateway/README.md</code> in the Miyar repository. The access key is stored in this browser only.</p></div>`}
     <div id="srcBody" class="src"></div>`;
   drawGwState();
   if (SRV.on){ drawSrc(); if (SRV.cfg.gateway && SRV.me.role !== 'viewer') connectGateway(); else { SRV.cfg.gateway || (SRV.msg = ''); } return; }
@@ -2498,7 +2499,7 @@ function drawSrc(){
     inner = `<div class="form-row"><input type="url" id="srcUrl" placeholder="https://example.com/data.json" style="flex:1 1 260px" aria-label="Address"><button class="btn primary" id="srcRun" type="button">Preview</button></div>
       <p class="hint" style="font-size:12px">Works when the site allows other sites to read it (CORS). If it doesn't, add it to the gateway as an OData source or download the file and import it.</p>`;
   } else if (SRC.state !== 'ok'){
-    inner = `<p>${IN_CLAUDE ? 'Open the self-hosted version of Basira to connect.' : 'Connect to your gateway above first.'} On the gateway, add a connection like this to <code>connections.json</code>; the <code>\${…}</code> values are read from environment variables so passwords stay out of the file:</p><pre class="snip">${esc(snippet)}</pre>`;
+    inner = `<p>${IN_CLAUDE ? 'Open the self-hosted version of Miyar to connect.' : 'Connect to your gateway above first.'} On the gateway, add a connection like this to <code>connections.json</code>; the <code>\${…}</code> values are read from environment variables so passwords stay out of the file:</p><pre class="snip">${esc(snippet)}</pre>`;
   } else if (!matches.length){
     inner = `<p>Your gateway has no ${esc(c.name)} connection yet. Add one like this to the gateway's <code>connections.json</code>, then click <b>Connect</b> again:</p><pre class="snip">${esc(snippet)}</pre>`;
   } else {
@@ -2551,7 +2552,7 @@ function drawSrc(){
 async function runSource(m){
   if (m.kind === 'web'){
     let r;
-    try { r = await fetch(m.url); } catch { throw new Error(IN_CLAUDE ? 'Inside Claude, pages cannot load data from other sites. Use the self-hosted version.' : 'The site did not allow Basira to read it (CORS), or it could not be reached.'); }
+    try { r = await fetch(m.url); } catch { throw new Error(IN_CLAUDE ? 'Inside Claude, pages cannot load data from other sites. Use the self-hosted version.' : 'The site did not allow Miyar to read it (CORS), or it could not be reached.'); }
     if (!r.ok) throw new Error(`The site replied ${r.status} ${r.statusText}.`);
     return parseAny(await r.text(), new URL(m.url).pathname);
   }
@@ -2644,7 +2645,7 @@ async function exportPDF(idxs, light, progress){
         pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(95, 101, 115);
         pdf.text(pdf.splitTextToSize(`${S.active}  ·  Selections: ${selText()}  ·  Exported ${new Date().toLocaleString()}`, contentW)[0], M, M + 22);
         pdf.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', M, top, contentW, h * scale, undefined, 'FAST');
-        pdf.setFontSize(8); pdf.text(`Basira  ·  ${sheet}`, W - M, H - M / 2, {align: 'right'});
+        pdf.setFontSize(8); pdf.text(`Miyar · the measure of your business  ·  ${sheet}`, W - M, H - M / 2, {align: 'right'});
       }
     }
   } finally {
@@ -2686,7 +2687,7 @@ async function exportXLSX(idxs, includeRows){
     ws['!autofilter'] = {ref: XLSX.utils.encode_range({s: {r: 0, c: 0}, e: {r: rows.length, c: header.length - 1}})};
     return ws;
   };
-  const summary = [['Basira export'], [], ['Dataset', S.active], ['Rows in view', globalRows().length], ['Selections', selText()], ['Exported', new Date().toLocaleString()], [], ['Page', 'Visual', 'Type', 'Sheet']];
+  const summary = [['Miyar export'], [], ['Dataset', S.active], ['Rows in view', globalRows().length], ['Selections', selText()], ['Exported', new Date().toLocaleString()], [], ['Page', 'Visual', 'Type', 'Sheet']];
   const sheets = [];
   for (const i of idxs) for (const v of S.pages[i].visuals){
     const tb = visualTable(v); if (!tb || !tb.rows.length) continue;
@@ -2710,7 +2711,7 @@ async function exportXLSX(idxs, includeRows){
 function openReport(){
   const json = JSON.stringify(reportJSON(), null, 1);
   const dlg = modal(`<div class="dlg-h"><h3>Report file</h3><button class="btn ghost" data-x type="button">Close</button></div>
-    <div class="dlg-b"><p>Your report saves automatically in this browser. To move it elsewhere, copy the report definition below (pages, visuals, calculated fields and formats; data is not included) and paste it into Basira on another device.</p>
+    <div class="dlg-b"><p>Your report saves automatically in this browser. To move it elsewhere, copy the report definition below (pages, visuals, calculated fields and formats; data is not included) and paste it into Miyar on another device.</p>
     <textarea class="code" id="rJson" spellcheck="false">${esc(json)}</textarea>
     <div class="form-row" style="margin-top:8px"><button class="btn" id="rCopy" type="button">Copy definition</button><button class="btn primary" id="rLoad" type="button">Load pasted definition</button><span style="flex:1"></span><button class="btn danger" id="rReset" type="button">Reset to sample</button></div>
     <div id="rMsg"></div></div>`, 'small');
@@ -2913,7 +2914,7 @@ function chatDigest(){
   return out.join('\n').slice(0, 60000);
 }
 function chatInstructions(){
-  return `You are the data analyst built into Basira, a business intelligence app. Answer the user's questions about their dataset.
+  return `You are the data analyst built into Miyar, a business intelligence app. Answer the user's questions about their dataset.
 
 ${chatContext()}
 
@@ -3182,7 +3183,7 @@ function loadReport(r){
     return;
   }
   S.reportId = r.id;
-  try { if (SRV.on) localStorage.setItem('basira-last-report', r.id); } catch {}
+  try { if (SRV.on) localStorage.setItem('miyar-last-report', r.id); } catch {}
   S.active = S.datasets[r.active] ? r.active : Object.keys(S.datasets)[0];
   S.pages = r.pages && r.pages.length ? r.pages : [{id: uid(), name: 'Page 1', visuals: []}];
   S.pageIdx = clamp(r.pageIdx || 0, 0, S.pages.length - 1);
@@ -3330,8 +3331,8 @@ function init(){
     resetToSample();
   }
 }
-/* ============================== Basira server ==============================
-   When the app is served by Basira server (server/ in the repository), people sign in with their company
+/* ============================== Miyar server ==============================
+   When the app is served by Miyar server (server/ in the repository), people sign in with their company
    account and reports and datasets are shared through the server. Anywhere else (a plain file, GitHub Pages,
    inside Claude) the app keeps everything in the browser as before. */
 const SRV = {on: false, cfg: null, me: null, saved: {}, dsMeta: {}, dsIds: new Set(), repIds: new Set(), timer: null, busy: false, again: false, conflict: null};
@@ -3340,9 +3341,9 @@ async function api(method, p, body, opt = {}){
   let r;
   try {
     r = await fetch('api/' + p, {method, credentials: 'same-origin',
-      headers: {'X-Basira': '1', ...(body !== undefined ? {'Content-Type': 'application/json'} : {}), ...(opt.headers || {})},
+      headers: {'X-Miyar': '1', ...(body !== undefined ? {'Content-Type': 'application/json'} : {}), ...(opt.headers || {})},
       body: opt.raw !== undefined ? opt.raw : body !== undefined ? JSON.stringify(body) : undefined});
-  } catch { const e = new Error('The Basira server could not be reached. Check your connection.'); e.status = 0; throw e; }
+  } catch { const e = new Error('The Miyar server could not be reached. Check your connection.'); e.status = 0; throw e; }
   let j = null; try { j = await r.json(); } catch {}
   if (!r.ok){ const e = new Error(j?.error || `The server replied ${r.status}.`); e.status = r.status; e.data = j; throw e; }
   return j;
@@ -3375,7 +3376,7 @@ function setSync(state, msg){
   if (!canEdit()){ el.classList.add('ro'); el.textContent = 'View only'; el.title = 'You can explore and filter reports but not change them. Ask an administrator for editor access.'; return; }
   const T = {pending: ['Unsaved changes', ''], saving: ['Saving…', ''], saved: ['All changes saved', ''], error: ['Not saved · retry', 'err'], conflict: ['Changed by someone else', 'conflict']}[state] || ['', ''];
   el.textContent = T[0]; if (T[1]) el.classList.add(T[1]);
-  el.title = msg || (state === 'saved' ? 'Saved to the Basira server' : '');
+  el.title = msg || (state === 'saved' ? 'Saved to the Miyar server' : '');
 }
 function srvSave(){
   if (!SRV.on || !canEdit()) return;
@@ -3450,8 +3451,9 @@ function showSignIn(reason){
   const next = location.pathname + location.search;
   document.body.insertAdjacentHTML('beforeend', `<div class="signin" id="signin" role="dialog" aria-label="Sign in"><div class="signin-card">
     <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="12" width="5" height="10" rx="1.5" fill="var(--s1)"/><rect x="9.5" y="6" width="5" height="16" rx="1.5" fill="var(--accent)"/><rect x="17" y="2" width="5" height="20" rx="1.5" fill="var(--s3)"/></svg>
-    <h1>Basira <span lang="ar" style="font-weight:500;color:var(--ink3);font-size:18px">بصيرة</span></h1>
-    <p>${esc(SRV.cfg?.org || '')}</p>
+    <h1>Miyar <span lang="ar" style="font-weight:500;color:var(--ink3);font-size:18px">معيار</span></h1>
+    <p class="tagline">The measure of your business · <span lang="ar">مقياس أعمالك</span></p>
+    <p><b>${esc(SRV.cfg?.org || '')}</b></p>
     ${reason === 'expired' ? '<p class="err">Your session has ended. Sign in again to keep working; changes from the last few seconds may not have been saved.</p>' : ''}
     <a class="btn primary" href="auth/login?next=${encodeURIComponent(next)}">Sign in with ${esc(SRV.cfg?.provider || 'your company account')}</a>
     ${SRV.cfg?.authMode === 'dev' ? '<p class="hint" style="font-size:12px;margin-top:14px">Trial mode: this server signs everyone in as an administrator.</p>' : ''}
@@ -3480,7 +3482,7 @@ document.addEventListener('pointerdown', e => { if (e.target.closest('#btnUser')
 async function signOut(){
   try { await srvFlush(); } catch {}
   try {
-    const r = await fetch('auth/logout', {method: 'POST', credentials: 'same-origin', headers: {'X-Basira': '1'}});
+    const r = await fetch('auth/logout', {method: 'POST', credentials: 'same-origin', headers: {'X-Miyar': '1'}});
     const j = await r.json(); location.href = j.redirect || './';
   } catch { location.reload(); }
 }
@@ -3522,10 +3524,10 @@ async function openAudit(){
 async function detectServer(){
   if (window.claude || location.protocol === 'file:') return null;
   try {
-    const r = await fetch('api/config', {credentials: 'same-origin', headers: {'X-Basira': '1'}});
+    const r = await fetch('api/config', {credentials: 'same-origin', headers: {'X-Miyar': '1'}});
     if (!r.ok) return null;
     const j = await r.json();
-    return j?.app === 'basira-server' ? j : null;
+    return j?.app === 'miyar-server' ? j : null;
   } catch { return null; }
 }
 async function initServer(){
@@ -3544,9 +3546,9 @@ async function initServer(){
   if (!REPORTS.length){
     REPORTS = [{id: uid(), name: 'Retail sample'}]; S.reportId = REPORTS[0].id;
     resetToSample();
-    if (canEdit()) toast('Welcome to Basira. This sample report is shared with your organisation; import your own data from Data → Import data.');
+    if (canEdit()) toast('Welcome to Miyar. This sample report is shared with your organisation; import your own data from Data → Import data.');
   } else {
-    let last = null; try { last = localStorage.getItem('basira-last-report'); } catch {}
+    let last = null; try { last = localStorage.getItem('miyar-last-report'); } catch {}
     loadReport(REPORTS.find(r => r.id === last) || REPORTS[0]);
   }
   commit(); histButtons();
@@ -3561,7 +3563,7 @@ async function boot(){
     await initServer();
   } catch (e){
     if (e.status === 401) return showSignIn();
-    document.body.insertAdjacentHTML('beforeend', `<div class="signin"><div class="signin-card"><h1>Basira</h1><p class="err">${esc(e.message)}</p><a class="btn" href="./">Try again</a></div></div>`);
+    document.body.insertAdjacentHTML('beforeend', `<div class="signin"><div class="signin-card"><h1>Miyar</h1><p class="err">${esc(e.message)}</p><a class="btn" href="./">Try again</a></div></div>`);
   }
 }
 window.addEventListener('beforeunload', e => { if (SRV.on && canEdit() && ($('#syncState')?.textContent || '').match(/Unsaved|Saving|Not saved/)){ e.preventDefault(); e.returnValue = ''; } });

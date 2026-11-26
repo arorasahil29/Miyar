@@ -1,7 +1,7 @@
 {
-  "name": "basira-gateway",
+  "name": "miyar-gateway",
   "version": "1.0.0",
-  "description": "Read-only query gateway that connects Basira to SAP, Oracle, Databricks, Snowflake, BigQuery and other data sources.",
+  "description": "Read-only query gateway that connects Miyar to SAP, Oracle, Databricks, Snowflake, BigQuery and other data sources.",
   "license": "MIT",
   "main": "server.js",
   "scripts": { "start": "node server.js" },

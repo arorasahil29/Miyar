@@ -1,7 +1,7 @@
 {
-  "name": "basira-server",
+  "name": "miyar-server",
   "version": "1.0.0",
-  "description": "Basira server: OpenID Connect sign-in, shared reports and datasets in PostgreSQL, roles and audit log.",
+  "description": "Miyar server: OpenID Connect sign-in, shared reports and datasets in PostgreSQL, roles and audit log.",
   "license": "MIT",
   "main": "server.js",
   "scripts": { "start": "node server.js" },

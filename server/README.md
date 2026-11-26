@@ -1,19 +1,19 @@
-# Basira server
+# Miyar server
 
-The server turns Basira from a single-person browser app into a shared tool for an organisation:
+The server turns Miyar from a single-person browser app into a shared tool for an organisation:
 
 - **Sign-in with any OpenID Connect provider**: Microsoft Entra ID (Office 365), Google Workspace, Okta, Keycloak, Auth0, Ping, OneLogin and others.
 - **Shared reports and datasets.** Report definitions and dataset details live in PostgreSQL; dataset rows are stored as compressed files on a disk volume or in S3-compatible storage.
 - **Roles.** Viewers open, filter and export reports. Editors also build reports and import or connect data. Admins also manage users and see the activity log.
 - **Activity log** of sign-ins, report and dataset changes, role changes and data-source queries.
-- **Live data through Basira Gateway**, called by the server so nobody's browser holds the gateway key.
+- **Live data through Miyar Gateway**, called by the server so nobody's browser holds the gateway key.
 
 It is built for **one organisation per installation**. Every table already carries an `org_id`, so the same database can later host several organisations without migrating data.
 
 ```
-browser ──HTTPS──▶ Basira server ──▶ PostgreSQL           (users, reports, dataset details, activity)
+browser ──HTTPS──▶ Miyar server ──▶ PostgreSQL           (users, reports, dataset details, activity)
                         │      └──▶ /data volume or S3     (dataset rows, gzip)
-                        └──────────▶ Basira Gateway ──▶ SAP / Oracle / Databricks / …
+                        └──────────▶ Miyar Gateway ──▶ SAP / Oracle / Databricks / …
 ```
 
 ## Quick start with Docker
@@ -30,7 +30,7 @@ To try it without an identity provider, set `AUTH_MODE=dev` in `.env`. Everyone 
 
 ## Sign-in setup
 
-Register Basira as a web application in your identity provider with:
+Register Miyar as a web application in your identity provider with:
 
 - **Redirect URI:** `<PUBLIC_URL>/auth/callback`, e.g. `https://bi.example.com/auth/callback`
 - **Sign-out redirect URI (optional):** `<PUBLIC_URL>/`
@@ -50,7 +50,7 @@ Then set `OIDC_ISSUER`, `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` in `.env`.
 
 Pick one way to manage roles:
 
-1. **In Basira (default).** The first person to sign in becomes an admin, unless you list admins in `ADMIN_EMAILS`. Everyone else starts as `DEFAULT_ROLE` (viewer) and an admin changes roles under **Account → Users and roles**.
+1. **In Miyar (default).** The first person to sign in becomes an admin, unless you list admins in `ADMIN_EMAILS`. Everyone else starts as `DEFAULT_ROLE` (viewer) and an admin changes roles under **Account → Users and roles**.
 2. **From your identity provider's groups.** Set `ADMIN_GROUPS` and/or `EDITOR_GROUPS` (group names or IDs as they appear in the `OIDC_ROLE_CLAIM` claim, default `groups`). Roles are then refreshed at every sign-in. Emails in `ADMIN_EMAILS` are always admins.
 
 `ALLOWED_EMAIL_DOMAINS` limits who may sign in at all.
@@ -59,7 +59,7 @@ Pick one way to manage roles:
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `PUBLIC_URL` | `http://localhost:8080` | The address people use. With `https://` cookies are marked Secure. A path such as `https://intranet.example.com/basira` works too. |
+| `PUBLIC_URL` | `http://localhost:8080` | The address people use. With `https://` cookies are marked Secure. A path such as `https://intranet.example.com/miyar` works too. |
 | `DATABASE_URL` | (required) | PostgreSQL connection string. `DATABASE_SSL=true` turns on TLS. |
 | `SESSION_SECRET` | (required) | At least 32 random characters. |
 | `SESSION_HOURS` | `12` | How long a sign-in lasts. |
@@ -73,7 +73,7 @@ Pick one way to manage roles:
 | `ALLOWED_EMAIL_DOMAINS` | | Comma-separated. |
 | `STORAGE_DRIVER` | `local` | `local` (files under `DATA_DIR`, default `/data`) or `s3`. |
 | `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_FORCE_PATH_STYLE`, `S3_SSE`, `S3_PREFIX` | | For AWS S3, MinIO, Cloudflare R2, Wasabi, Google Cloud Storage (interoperability keys) and similar. Leave the keys empty to use the cloud's own identity (e.g. an AWS IAM role). |
-| `GATEWAY_URL`, `GATEWAY_KEY` | | Basira Gateway for live data sources. |
+| `GATEWAY_URL`, `GATEWAY_KEY` | | Miyar Gateway for live data sources. |
 | `MAX_UPLOAD` | `200mb` | Largest dataset upload. |
 
 ## Running in production
@@ -94,7 +94,7 @@ Pick one way to manage roles:
 
 ## API
 
-All endpoints are under `<PUBLIC_URL>/api` and use the session cookie. Requests that change data need the header `X-Basira: 1`.
+All endpoints are under `<PUBLIC_URL>/api` and use the session cookie. Requests that change data need the header `X-Miyar: 1`.
 
 | Method | Path | Role |
 |---|---|---|
@@ -110,4 +110,4 @@ All endpoints are under `<PUBLIC_URL>/api` and use the session cookie. Requests 
 
 ## Growing to several organisations later
 
-The data model is ready: `orgs` is a table and every row has `org_id`. To serve several organisations from one installation you would add a way to tell organisations apart at sign-in (by email domain, by sub-domain such as `acme.basira.app`, or by identity-provider tenant), store one OIDC configuration per organisation, and add an admin view for creating organisations. No existing data needs to move.
+The data model is ready: `orgs` is a table and every row has `org_id`. To serve several organisations from one installation you would add a way to tell organisations apart at sign-in (by email domain, by sub-domain such as `acme.miyar.app`, or by identity-provider tenant), store one OIDC configuration per organisation, and add an admin view for creating organisations. No existing data needs to move.

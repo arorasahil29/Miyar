@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * Basira Gateway: a small read-only query service between Basira and your data sources.
+ * Miyar Gateway: a small read-only query service between Miyar and your data sources.
  * The browser never sees database credentials. It sends a connection name and a read-only
  * query; the gateway runs it with credentials from connections.json (or environment variables)
  * and returns rows as JSON.
@@ -15,14 +15,14 @@ const {promisify} = require('node:util');
 const VERSION = '1.0.0';
 const PORT = Number(process.env.PORT) || 8787;
 const HOST = process.env.HOST || '0.0.0.0';
-const KEY = process.env.BASIRA_GATEWAY_KEY || '';
+const KEY = process.env.MIYAR_GATEWAY_KEY || '';
 const ORIGINS = (process.env.ALLOWED_ORIGINS || '*').split(',').map(s => s.trim()).filter(Boolean);
 const CONFIG = process.env.CONNECTIONS_FILE || path.join(__dirname, 'connections.json');
 const MAX_ROWS = Number(process.env.MAX_ROWS) || 200000;
 const TIMEOUT_MS = Number(process.env.QUERY_TIMEOUT_MS) || 120000;
 
 if (!KEY && process.env.ALLOW_NO_KEY !== '1'){
-  console.error('Set BASIRA_GATEWAY_KEY to a long random secret (for example: openssl rand -hex 24).');
+  console.error('Set MIYAR_GATEWAY_KEY to a long random secret (for example: openssl rand -hex 24).');
   process.exit(1);
 }
 
@@ -292,7 +292,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://gateway');
   const started = Date.now();
   try {
-    if (url.pathname === '/health') return send(res, 200, {ok: true, name: 'basira-gateway', version: VERSION});
+    if (url.pathname === '/health') return send(res, 200, {ok: true, name: 'miyar-gateway', version: VERSION});
     if (!authorised(req)) throw new HttpError(401, 'Wrong or missing access key.');
     if (req.method === 'GET' && url.pathname === '/connections')
       return send(res, 200, {connections: [...connections().values()].map(c => ({name: c.name, type: c.type, description: c.description || ''}))});
@@ -321,4 +321,4 @@ const server = http.createServer(async (req, res) => {
     send(res, status, {error: e.status ? e.message : `The data source returned an error: ${e.message}`});
   }
 });
-server.listen(PORT, HOST, () => console.log(`Basira Gateway ${VERSION} listening on http://${HOST}:${PORT} (allowed origins: ${ORIGINS.join(', ')})`));
+server.listen(PORT, HOST, () => console.log(`Miyar Gateway ${VERSION} listening on http://${HOST}:${PORT} (allowed origins: ${ORIGINS.join(', ')})`));

@@ -1,4 +1,4 @@
--- Basira server schema, version 1.
+-- Miyar server schema, version 1.
 -- Every table carries org_id, so one installation can later host several organisations.
 CREATE TABLE IF NOT EXISTS orgs (
   id          uuid PRIMARY KEY,

@@ -1,11 +1,11 @@
-# Basira Gateway
+# Miyar Gateway
 
-A small read-only query service that connects Basira to live data: SAP, Oracle, Databricks, Snowflake, BigQuery, SQL Server, PostgreSQL, MySQL, Redshift, Synapse, SQLite and OData feeds.
+A small read-only query service that connects Miyar to live data: SAP, Oracle, Databricks, Snowflake, BigQuery, SQL Server, PostgreSQL, MySQL, Redshift, Synapse, SQLite and OData feeds.
 
-Browsers cannot talk to databases directly, and database passwords must never sit in a web page. The gateway runs next to your data, keeps the credentials, accepts only read-only queries, and returns rows to Basira as JSON.
+Browsers cannot talk to databases directly, and database passwords must never sit in a web page. The gateway runs next to your data, keeps the credentials, accepts only read-only queries, and returns rows to Miyar as JSON.
 
 ```
-Basira (browser)  ──HTTPS + access key──▶  Basira Gateway  ──native driver──▶  SAP / Oracle / Databricks / …
+Miyar (browser)  ──HTTPS + access key──▶  Miyar Gateway  ──native driver──▶  SAP / Oracle / Databricks / …
 ```
 
 ## Supported sources
@@ -39,20 +39,20 @@ Copy `connections.example.json` to `connections.json` and keep only what you nee
 ] }
 ```
 
-The `name` is what people see in Basira. Use a **read-only database user** for every connection.
+The `name` is what people see in Miyar. Use a **read-only database user** for every connection.
 
 ## 2. Run it
 
 ### With Docker (recommended)
 
-The repository's `docker-compose.yml` runs the gateway next to Basira server, PostgreSQL and the web app (see the main README). The gateway is only reachable inside the Docker network; Basira server calls it with `BASIRA_GATEWAY_KEY` from `.env`, so people's browsers never see the key. Put the secrets your `connections.json` refers to in `gateway/.env` (one `NAME=value` per line).
+The repository's `docker-compose.yml` runs the gateway next to Miyar server, PostgreSQL and the web app (see the main README). The gateway is only reachable inside the Docker network; Miyar server calls it with `MIYAR_GATEWAY_KEY` from `.env`, so people's browsers never see the key. Put the secrets your `connections.json` refers to in `gateway/.env` (one `NAME=value` per line).
 
 To run the gateway on its own, for example on a machine inside the network where your databases are:
 
 ```bash
-docker build -t basira-gateway ./gateway
-docker run -d -p 8787:8787 -e BASIRA_GATEWAY_KEY=your-long-random-key \
-  -v $PWD/gateway/connections.json:/app/connections.json:ro --env-file gateway/.env basira-gateway
+docker build -t miyar-gateway ./gateway
+docker run -d -p 8787:8787 -e MIYAR_GATEWAY_KEY=your-long-random-key \
+  -v $PWD/gateway/connections.json:/app/connections.json:ro --env-file gateway/.env miyar-gateway
 ```
 
 ### With Node.js 22.13 or later
@@ -60,22 +60,22 @@ docker run -d -p 8787:8787 -e BASIRA_GATEWAY_KEY=your-long-random-key \
 ```bash
 cd gateway
 npm install
-BASIRA_GATEWAY_KEY=your-long-random-key ALLOWED_ORIGINS=https://yourname.github.io node server.js
+MIYAR_GATEWAY_KEY=your-long-random-key ALLOWED_ORIGINS=https://yourname.github.io node server.js
 ```
 
 `npm install` tries every driver; any that fail to install are skipped, and only that source is unavailable.
 
-## 3. Connect from Basira
+## 3. Connect from Miyar
 
-With Basira server, the connection is already made: editors open **Data → Data sources** and pick a source. Without a server, open **Data → Data sources**, enter the gateway address and access key, click **Connect**, choose a source, then pick a table or write a query and click **Preview**. Loaded data opens as a new report, and **Refresh from …** in the Fields pane reloads it later.
+With Miyar server, the connection is already made: editors open **Data → Data sources** and pick a source. Without a server, open **Data → Data sources**, enter the gateway address and access key, click **Connect**, choose a source, then pick a table or write a query and click **Preview**. Loaded data opens as a new report, and **Refresh from …** in the Fields pane reloads it later.
 
-Live connections work in the self-hosted Basira (GitHub Pages, Docker, your own server). Inside claude.ai, pages cannot reach other servers.
+Live connections work in the self-hosted Miyar (GitHub Pages, Docker, your own server). Inside claude.ai, pages cannot reach other servers.
 
 ## Settings
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `BASIRA_GATEWAY_KEY` | (required) | Shared access key. Basira sends it as `Authorization: Bearer …`. |
+| `MIYAR_GATEWAY_KEY` | (required) | Shared access key. Miyar sends it as `Authorization: Bearer …`. |
 | `ALLOWED_ORIGINS` | `*` | Comma-separated sites allowed to call the gateway, e.g. `https://yourname.github.io`. Set this in production. |
 | `CONNECTIONS_FILE` | `./connections.json` | Path to the connections file. Changes are picked up without a restart. |
 | `MAX_ROWS` | `200000` | Most rows one query may return. |

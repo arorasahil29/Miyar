@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /*
- * Basira server
- *  - Serves the Basira web app.
+ * Miyar server
+ *  - Serves the Miyar web app.
  *  - Signs people in with any OpenID Connect provider (Microsoft Entra ID, Google, Okta, Keycloak, Auth0, ...).
  *  - Stores shared reports and datasets: metadata in PostgreSQL, dataset rows as gzip files on disk or in S3.
  *  - Enforces roles (admin, editor, viewer) and keeps an audit log.
- *  - Forwards data-source queries to Basira Gateway, so users never see the gateway's access key.
+ *  - Forwards data-source queries to Miyar Gateway, so users never see the gateway's access key.
  *
  * Built for one organisation per installation, with org_id on every row so it can host several later.
  */
@@ -50,7 +50,7 @@ const CFG = {
 };
 
 function fail(msg){ console.error(`\n[config] ${msg}\n`); process.exit(1); }
-if (!process.env.DATABASE_URL) fail('Set DATABASE_URL, e.g. postgres://basira:secret@db:5432/basira');
+if (!process.env.DATABASE_URL) fail('Set DATABASE_URL, e.g. postgres://miyar:secret@db:5432/miyar');
 if (CFG.sessionSecret.length < 32) fail('Set SESSION_SECRET to at least 32 random characters (for example: openssl rand -hex 32).');
 if (!['oidc', 'dev'].includes(CFG.authMode)) fail('AUTH_MODE must be "oidc" or "dev".');
 if (CFG.authMode === 'oidc' && (!CFG.oidc.issuer || !CFG.oidc.clientId)) fail('Set OIDC_ISSUER and OIDC_CLIENT_ID (and OIDC_CLIENT_SECRET for confidential clients).');
@@ -180,7 +180,7 @@ async function resolveRole(existing, email, claims){
     if (g.some(x => CFG.editorGroups.includes(x))) return 'editor';
     return existing?.role === 'admin' && !CFG.adminGroups.length ? 'admin' : CFG.defaultRole;
   }
-  if (existing) return existing.role;                       // roles managed in Basira
+  if (existing) return existing.role;                       // roles managed in Miyar
   if (CFG.firstUserAdmin && !CFG.adminEmails.length){
     const {rows} = await db("SELECT 1 FROM users WHERE org_id = $1 AND role = 'admin' LIMIT 1", [ORG.id]);
     if (!rows.length) return 'admin';
@@ -190,7 +190,7 @@ async function resolveRole(existing, email, claims){
 async function signIn(req, res, {issuer, subject, email, name, claims, idToken}){
   if (CFG.allowedDomains.length){
     const domain = String(email || '').toLowerCase().split('@')[1];
-    if (!domain || !CFG.allowedDomains.includes(domain)) throw new HttpError(403, 'Your account is not allowed to use this Basira installation.');
+    if (!domain || !CFG.allowedDomains.includes(domain)) throw new HttpError(403, 'Your account is not allowed to use this Miyar installation.');
   }
   const existing = (await db('SELECT * FROM users WHERE org_id = $1 AND issuer = $2 AND subject = $3', [ORG.id, issuer, subject])).rows[0];
   const role = await resolveRole(existing, email, claims || {});
@@ -201,7 +201,7 @@ async function signIn(req, res, {issuer, subject, email, name, claims, idToken})
   const sid = crypto.randomBytes(32).toString('base64url');
   await db(`INSERT INTO sessions (id_hash, user_id, org_id, id_token, expires_at) VALUES ($1,$2,$3,$4, now() + ($5 || ' hours')::interval)`,
     [sha(sid), user.id, ORG.id, idToken || null, String(CFG.sessionHours)]);
-  setCookie(res, 'basira_sid', sid, CFG.sessionHours * 3600);
+  setCookie(res, 'miyar_sid', sid, CFG.sessionHours * 3600);
   req.user = user; req.org = ORG;
   await audit(req, 'user.sign_in', {type: 'user', id: user.id, name: user.email}, existing ? null : {first_sign_in: true, role});
   return user;
@@ -209,7 +209,7 @@ async function signIn(req, res, {issuer, subject, email, name, claims, idToken})
 
 async function authenticate(req, _res, next){
   try {
-    const sid = cookies(req).basira_sid;
+    const sid = cookies(req).miyar_sid;
     if (sid){
       const {rows} = await db(`SELECT u.*, s.expires_at, s.id_token FROM sessions s JOIN users u ON u.id = s.user_id
         WHERE s.id_hash = $1 AND s.expires_at > now()`, [sha(sid)]);
@@ -226,7 +226,7 @@ const need = role => (req, _res, next) => {
 // Requests that change data must come from the app itself: a custom header that other sites cannot send without CORS.
 function csrf(req, _res, next){
   if (req.method === 'GET' || req.method === 'HEAD') return next();
-  if (req.headers['x-basira'] !== '1') return next(new HttpError(403, 'Missing request header.'));
+  if (req.headers['x-miyar'] !== '1') return next(new HttpError(403, 'Missing request header.'));
   const origin = req.headers.origin;
   if (origin && origin !== new URL(PUBLIC_URL).origin) return next(new HttpError(403, 'Request from another site.'));
   next();
@@ -251,7 +251,7 @@ router.use(authenticate);
 /* --- the web app --- */
 let appHtml = null;
 function serveApp(_req, res){
-  try { appHtml ||= fs.readFileSync(CFG.appFile); } catch { return res.status(500).send('The Basira app file is missing. Set APP_FILE.'); }
+  try { appHtml ||= fs.readFileSync(CFG.appFile); } catch { return res.status(500).send('The Miyar app file is missing. Set APP_FILE.'); }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
   // 'unsafe-eval' is needed for calculated-field formulas, which the app validates before compiling.
@@ -274,14 +274,14 @@ router.get('/auth/login', async (req, res, next) => {
     const {generators} = require('openid-client');
     const client = await oidc();
     const verifier = generators.codeVerifier(), state = generators.state(), nonce = generators.nonce();
-    setCookie(res, 'basira_auth', sealed({verifier, state, nonce, next: nextUrl, exp: Date.now() + 10 * 60e3}), 600);
+    setCookie(res, 'miyar_auth', sealed({verifier, state, nonce, next: nextUrl, exp: Date.now() + 10 * 60e3}), 600);
     res.redirect(client.authorizationUrl({scope: CFG.oidc.scopes, code_challenge: generators.codeChallenge(verifier), code_challenge_method: 'S256', state, nonce}));
   } catch (e){ next(e); }
 });
 router.get('/auth/callback', async (req, res, next) => {
   try {
-    const flow = unseal(cookies(req).basira_auth);
-    setCookie(res, 'basira_auth', '', 0);
+    const flow = unseal(cookies(req).miyar_auth);
+    setCookie(res, 'miyar_auth', '', 0);
     if (!flow || flow.exp < Date.now()) throw new HttpError(400, 'The sign-in took too long or was started in another browser. Please try again.');
     const client = await oidc();
     const params = client.callbackParams(req);
@@ -315,7 +315,7 @@ router.post('/auth/logout', csrf, async (req, res, next) => {
         } catch {}
       }
     }
-    setCookie(res, 'basira_sid', '', 0);
+    setCookie(res, 'miyar_sid', '', 0);
     res.json({redirect});
   } catch (e){ next(e); }
 });
@@ -326,7 +326,7 @@ router.use('/api', csrf, api);
 const small = express.json({limit: '20mb'});
 const large = express.json({limit: CFG.maxUpload, inflate: true});
 
-api.get('/config', (_req, res) => res.json({app: 'basira-server', version: '1.0.0', authMode: CFG.authMode, org: ORG.name,
+api.get('/config', (_req, res) => res.json({app: 'miyar-server', version: '1.0.0', authMode: CFG.authMode, org: ORG.name,
   provider: CFG.oidc.providerName, gateway: !!CFG.gatewayUrl}));
 api.get('/me', (req, res) => {
   if (!req.user) return res.status(401).json({error: 'Sign in to continue.', login: (BASE || '') + '/auth/login'});
@@ -496,7 +496,7 @@ api.get('/audit', need('admin'), async (req, res, next) => {
   } catch (e){ next(e); }
 });
 
-/* data sources: forwarded to Basira Gateway with the server's key */
+/* data sources: forwarded to Miyar Gateway with the server's key */
 async function gateway(pathname, init){
   if (!CFG.gatewayUrl) throw new HttpError(501, 'No gateway is configured on this server (GATEWAY_URL).');
   let r;
@@ -526,7 +526,7 @@ app.use((err, req, res, _next) => {
   if (status >= 500) console.error(`[error] ${req.method} ${req.originalUrl}:`, err.stack || err.message);
   const msg = status >= 500 && !err.status ? 'Something went wrong on the server.' : err.type === 'entity.too.large' ? `That is larger than this server accepts (MAX_UPLOAD=${CFG.maxUpload}).` : err.message;
   if (req.accepts(['json', 'html']) === 'html' && req.path.includes('/auth/'))
-    return res.status(status).send(`<!doctype html><meta charset="utf-8"><title>Basira</title><body style="font:15px system-ui;max-width:520px;margin:12vh auto;padding:0 16px"><h2>Sign-in problem</h2><p>${String(msg).replace(/[<>&]/g, '')}</p><p><a href="${BASE || '/'}">Back to Basira</a></p>`);
+    return res.status(status).send(`<!doctype html><meta charset="utf-8"><title>Miyar</title><body style="font:15px system-ui;max-width:520px;margin:12vh auto;padding:0 16px"><h2>Sign-in problem</h2><p>${String(msg).replace(/[<>&]/g, '')}</p><p><a href="${BASE || '/'}">Back to Miyar</a></p>`);
   res.status(status).json({error: msg, ...(err.extra || {})});
 });
 
@@ -537,6 +537,6 @@ async function start(){
     catch (e){ if (i >= 30) throw e; console.log(`[db] waiting for PostgreSQL (${e.message})`); await new Promise(r => setTimeout(r, 2000)); }
   }
   setInterval(() => db('DELETE FROM sessions WHERE expires_at < now()').catch(() => {}), 3600e3).unref();
-  app.listen(CFG.port, () => console.log(`Basira server listening on port ${CFG.port} for ${PUBLIC_URL} · org "${ORG.name}" · sign-in: ${CFG.authMode} · storage: ${storage.name}${CFG.gatewayUrl ? ' · gateway: ' + CFG.gatewayUrl : ''}`));
+  app.listen(CFG.port, () => console.log(`Miyar server listening on port ${CFG.port} for ${PUBLIC_URL} · org "${ORG.name}" · sign-in: ${CFG.authMode} · storage: ${storage.name}${CFG.gatewayUrl ? ' · gateway: ' + CFG.gatewayUrl : ''}`));
 }
 start().catch(e => { console.error('[fatal]', e); process.exit(1); });

@@ -1,4 +1,4 @@
-# Build from the repository root:  docker build -f server/Dockerfile -t basira-server .
+# Build from the repository root:  docker build -f server/Dockerfile -t miyar-server .
 FROM node:22-slim
 WORKDIR /app
 COPY server/package.json ./
