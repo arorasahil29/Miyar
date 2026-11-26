@@ -324,6 +324,8 @@ pre.snip{font-family:var(--f-data);font-size:12px;background:var(--raise);border
 .msg .st{color:var(--ink2);font-size:12px;margin-top:6px}
 .msg .err{margin-top:6px}
 .msg .did{margin-top:8px;font-size:12px;color:var(--ink2);display:flex;flex-direction:column;gap:2px}
+.sahil-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--s3));color:#fff;font-family:var(--f-head);font-weight:600;flex:none}
+.mini-chart{height:190px;margin:8px 0 6px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
 .chat-intro{color:var(--ink2);line-height:1.55;margin:0}
 .samples{display:flex;flex-direction:column;gap:6px}
 .samples h5{margin:4px 0 2px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600}
@@ -512,7 +514,7 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
         <button class="btn" id="btnReset" type="button" title="Put the report back the way it was when you opened it" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9"/><path d="M2.5 2v3.5H6"/></svg><span class="lbl-txt">Reset</span></button>
       </div>
       <button class="btn only-narrow" id="btnFields" type="button">Fields</button>
-      <button class="btn ask" id="btnAsk" type="button" title="Ask questions about your data in English or Arabic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/><path d="M5.5 6.5h5M5.5 8.5h3"/></svg><span class="lbl-txt">Ask</span></button>
+      <button class="btn ask" id="btnAsk" type="button" title="Ask Sahil about your data, in English or Arabic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/><path d="M5.5 6.5h5M5.5 8.5h3"/></svg><span class="lbl-txt">Ask Sahil</span></button>
       <button class="btn" id="btnPlay" type="button" title="Playgrounds: save and open your work"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3l1.5 1.6h5.5c.7 0 1.2.5 1.2 1.2v6.5c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg><span class="lbl-txt">Playground</span></button>
       <button class="btn" id="btnData" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg><span class="lbl-txt">Data</span></button>
       <button class="btn" id="btnAuto" type="button" title="Generate a starter page from the active dataset"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l1.6 3.9 3.9 1.6-3.9 1.6L8 12.5 6.4 8.6 2.5 7l3.9-1.6z"/></svg><span class="lbl-txt">Auto-build</span></button>
@@ -548,11 +550,11 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
   <button type="button" data-m="fields"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 5h13M3.5 10h13M3.5 15h8"/></svg>Fields</button>
   <button type="button" data-m="build"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><path d="M14 11v6M11 14h6"/></svg>Build</button>
   <button type="button" data-m="add" class="add"><span><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4v12M4 10h12"/></svg></span>Visual</button>
-  <button type="button" data-m="ask"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h14v9H9.5L5.5 16.5V13H3z"/><path d="M6.5 7.5h7M6.5 10h4.5"/></svg>Ask</button>
+  <button type="button" data-m="ask"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h14v9H9.5L5.5 16.5V13H3z"/><path d="M6.5 7.5h7M6.5 10h4.5"/></svg>Sahil</button>
   <button type="button" data-m="more"><svg viewBox="0 0 20 20" fill="currentColor"><circle cx="4.5" cy="10" r="1.6"/><circle cx="10" cy="10" r="1.6"/><circle cx="15.5" cy="10" r="1.6"/></svg>More</button>
 </nav>
 <div id="sheetRoot"></div>
-<aside class="chat" id="chat" hidden aria-label="Ask your data"></aside>
+<aside class="chat" id="chat" hidden aria-label="Ask Sahil"></aside>
 <div id="modalRoot"></div>
 <div id="toastRoot"></div>
 
@@ -3234,217 +3236,411 @@ function resetToSample(){
   renderAll();
 }
 
-/* ============================== ask your data ==============================
-   Questions go to Claude through the page's `sample` capability. Claude never sees the raw rows: it gets the
-   dataset's schema and calls the page's own query tools, which compute every number here in the browser. */
+/* ============================== Ask Sahil ==============================
+   Miyar's built-in assistant. It reads a question in English or Arabic, matches its words to the fields, values,
+   dates and intent (totals, rankings, trends, comparisons, growth, shares, counts, averages, summaries), computes
+   the answer from the report's own data and replies in the language of the question. No outside service, no key,
+   nothing leaves the browser. */
 const CHATS = {};
-const CH = {lang: (() => { try { return localStorage.getItem('facet-chat-lang') || 'en'; } catch { return 'en'; } })(), busy: false, ctl: null, deep: false, off: null, sampleP: null, toolsOK: true};
-const curChat = () => (CHATS[S.reportId] ||= {msgs: [], turns: []});
+const CH = {lang: (() => { try { return localStorage.getItem('miyar-chat-lang') || 'en'; } catch { return 'en'; } })(), busy: false, ctx: {}};
+const curChat = () => (CHATS[S.reportId] ||= {msgs: [], ctx: {}});
 const CT = {
-  en: {title:'Ask your data', sub: n => `Answers are calculated from “${n}”`, ph:'Ask a question about your data…', send:'Ask', stop:'Stop',
-    deep:'Deeper analysis (slower)', tryEn:'Try asking', tryAr:'بالعربية', clear:'New chat', thinking:'Thinking…', note:'Uses your Claude account',
-    intro:'Ask in plain English or Arabic. Every number is calculated from the dataset behind this report, and I can add charts or filter the report for you.',
-    unavailable:'Ask your data uses Claude, which is not available in this view. Open the report in claude.ai to use it.',
-    denied:'Claude was not allowed for this page, so questions cannot be answered. Reload the page to be asked again.',
-    error:'Something went wrong while answering. Try asking again.', limited:'Too many questions at once, or your Claude usage limit was reached. Try again in a little while.',
-    refused:'Claude could not answer that question. Try rephrasing it.', cut:'The answer was cut short. Ask for less at a time.',
-    q: f => `Calculating ${f}…`, v: f => `Looking up values in ${f}…`, added: t => `Added chart “${t}” to this page`, filt: t => `Filtered the report: ${t}`, close:'Close'},
-  ar: {title:'اسأل بياناتك', sub: n => `تُحسب الإجابات من «${n}»`, ph:'اكتب سؤالك عن البيانات…', send:'اسأل', stop:'إيقاف',
-    deep:'تحليل أعمق (أبطأ)', tryEn:'In English', tryAr:'جرّب أن تسأل', clear:'محادثة جديدة', thinking:'جارٍ التفكير…', note:'يستخدم حسابك في Claude',
-    intro:'اسأل بالعربية أو الإنجليزية. تُحسب كل الأرقام من البيانات التي بُني عليها هذا التقرير، ويمكنني إضافة رسوم بيانية أو تصفية التقرير لك.',
-    unavailable:'تعتمد هذه الميزة على Claude، وهو غير متاح في هذا العرض. افتح التقرير في claude.ai لاستخدامها.',
-    denied:'لم يُسمح لـ Claude في هذه الصفحة، لذا لا يمكن الإجابة عن الأسئلة. أعد تحميل الصفحة ليُطلب الإذن مرة أخرى.',
-    error:'حدث خطأ أثناء الإجابة. حاول أن تسأل مرة أخرى.', limited:'عدد كبير من الأسئلة في وقت واحد، أو تم بلوغ حد الاستخدام. حاول مرة أخرى بعد قليل.',
-    refused:'تعذّر على Claude الإجابة عن هذا السؤال. جرّب صياغته بطريقة أخرى.', cut:'انقطعت الإجابة قبل اكتمالها. اطلب معلومات أقل في كل مرة.',
-    q: f => `جارٍ حساب ${f}…`, v: f => `جارٍ البحث في قيم ${f}…`, added: t => `تمت إضافة الرسم «${t}» إلى هذه الصفحة`, filt: t => `تمت تصفية التقرير: ${t}`, close:'إغلاق'},
+  en: {title: 'Ask Sahil', sub: n => n ? `Answers from “${n}”` : 'Your built-in data assistant', ph: 'Ask Sahil about your data…', send: 'Ask', clear: 'New chat', close: 'Close',
+    tryEn: 'Try asking', tryAr: 'بالعربية', thinking: 'Working it out…', addChart: 'Add this chart to the page', added: 'Added to the page', note: 'Answers are worked out from this report’s data, in your browser.',
+    intro: 'Hi, I’m Sahil. Ask me about the data in this report, in English or Arabic: totals, top and bottom performers, trends, comparisons, growth and more. I can also draw charts and filter the report for you.',
+    nodata: 'Upload some data first, then ask me about it.', error: 'Something went wrong while working that out. Try asking another way.'},
+  ar: {title: 'اسأل Sahil', sub: n => n ? `إجابات من «${n}»` : 'مساعد البيانات المدمج', ph: 'اسأل Sahil عن بياناتك…', send: 'اسأل', clear: 'محادثة جديدة', close: 'إغلاق',
+    tryEn: 'In English', tryAr: 'جرّب أن تسأل', thinking: 'جارٍ الحساب…', addChart: 'أضف هذا الرسم إلى الصفحة', added: 'تمت الإضافة إلى الصفحة', note: 'تُحسب الإجابات من بيانات هذا التقرير داخل متصفحك.',
+    intro: 'مرحبًا، أنا Sahil. اسألني عن بيانات هذا التقرير بالعربية أو الإنجليزية: الإجماليات، الأعلى والأقل، الاتجاهات، المقارنات، النمو وغير ذلك. ويمكنني أيضًا رسم المخططات وتصفية التقرير لك.',
+    nodata: 'ارفع بعض البيانات أولًا، ثم اسألني عنها.', error: 'حدث خطأ أثناء الحساب. جرّب صياغة السؤال بطريقة أخرى.'},
 };
 const T = () => CT[CH.lang];
 
-function samplePrompts(){
-  const d = ds();
-  if (d?.sample) return {
-    en: ['What were total revenue and profit in 2025 compared with 2024?', 'Which 5 sub-categories have the highest profit margin?', 'Which region grew revenue fastest from 2024 to 2025?',
-         'Show monthly revenue for Technology as a chart', 'Are big discounts hurting profit? Compare the discount bands.', 'Summarize the 5 most important insights in this data'],
-    ar: ['ما إجمالي الإيرادات والأرباح في عام 2025 مقارنة بعام 2024؟', 'ما هي أكثر 5 فئات فرعية تحقيقًا لهامش الربح؟', 'أي منطقة حققت أسرع نمو في الإيرادات بين 2024 و2025؟',
-         'اعرض الإيرادات الشهرية لفئة التكنولوجيا في رسم بياني', 'هل تؤثر الخصومات الكبيرة على الأرباح؟ قارن بين فئات الخصم.', 'لخّص أهم 5 نتائج في هذه البيانات'],
-  };
-  const m = FIELDS.find(f => f.role === 'measure' && f.src === 'col')?.name || 'records';
-  const dim = FIELDS.find(f => f.role === 'dim' && f.src === 'col' && f.type === 'string' && new Set(ROWS.slice(0, 2000).map(r => r[f.name])).size <= 40)?.name;
-  const dt = FIELDS.find(f => f.type === 'date')?.name;
-  const en = [], ar = [];
-  if (dim){ en.push(`What is the total ${m} by ${dim}?`, `Which ${dim} has the highest ${m}, and by how much?`); ar.push(`ما إجمالي ${m} حسب ${dim}؟`, `أي ${dim} لديه أعلى ${m}، وبأي فارق؟`); }
-  if (dt){ en.push(`How has ${m} changed over time? Show it as a chart`); ar.push(`كيف تغيّر ${m} بمرور الوقت؟ اعرضه في رسم بياني`); }
-  en.push(`Are there any unusual values or outliers in ${m}?`, 'Summarize the 5 most important insights in this data');
-  ar.push(`هل توجد قيم غير عادية في ${m}؟`, 'لخّص أهم 5 نتائج في هذه البيانات');
-  return {en, ar};
+/* ---------- language helpers ---------- */
+const AR_RE = /[؀-ۿ]/;
+const normAr = s => s.replace(/[ً-ْٰـ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+const norm = s => normAr(String(s ?? '').toLowerCase()).replace(/[’'`"“”«»؟?!,،.;:()\[\]{}<>|*_\/-]/g, ' ').replace(/\s+/g, ' ').trim();
+const AR_PRE = ['وبال', 'فبال', 'وال', 'فال', 'بال', 'كال', 'لل', 'ال', 'وب', 'ول', 'ب', 'ل', 'و'];
+function stems(w){
+  const out = [w];
+  if (AR_RE.test(w)){ for (const p of AR_PRE) if (w.startsWith(p) && w.length - p.length >= 2) out.push(w.slice(p.length)); }
+  else if (w.length > 4 && w.endsWith('ies')) out.push(w.slice(0, -3) + 'y');
+  else if (w.length > 3 && w.endsWith('es') && /(ss|x|ch|sh)es$/.test(w)) out.push(w.slice(0, -2));
+  else if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) out.push(w.slice(0, -1));
+  return out;
 }
+function tokSet(qn){ const t = new Set(); for (const w of qn.split(' ')) for (const x of stems(w)) t.add(x); return t; }
+function hasAny(Q, list){
+  return list.some(ph => { const p = norm(ph); return p.includes(' ') ? Q.pad.includes(' ' + p + ' ') : stems(p).some(x => Q.toks.has(x)); });
+}
+function lev(a, b){
+  if (Math.abs(a.length - b.length) > 1) return 2;
+  const d = Array.from({length: a.length + 1}, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+/* business words in both languages, used to match questions to columns */
+const SYN = {
+  revenue: ['revenue', 'revenues', 'sales', 'sale', 'income', 'turnover', 'ايرادات', 'ايراد', 'مبيعات', 'دخل', 'عائدات'],
+  profit: ['profit', 'profits', 'earnings', 'ربح', 'ارباح', 'الربح'],
+  cost: ['cost', 'costs', 'expense', 'expenses', 'spend', 'spending', 'تكلفه', 'تكاليف', 'مصاريف', 'مصروفات', 'نفقات'],
+  margin: ['margin', 'margins', 'هامش'],
+  units: ['units', 'unit', 'quantity', 'qty', 'volume', 'pieces', 'كميه', 'كميات', 'وحدات', 'وحده'],
+  price: ['price', 'prices', 'سعر', 'اسعار'],
+  amount: ['amount', 'amounts', 'مبلغ', 'مبالغ', 'قيمه'],
+  budget: ['budget', 'budgets', 'ميزانيه', 'موازنه'],
+  actual: ['actual', 'actuals', 'فعلي'],
+  salary: ['salary', 'salaries', 'pay', 'wage', 'wages', 'راتب', 'رواتب', 'اجور'],
+  discount: ['discount', 'discounts', 'خصم', 'خصومات'],
+  target: ['target', 'targets', 'goal', 'هدف', 'مستهدف'],
+  sub: ['sub', 'subcategory', 'subcategories', 'فرعي', 'فرعيه', 'الفرعيه'],
+  region: ['region', 'regions', 'area', 'areas', 'territory', 'منطقه', 'مناطق'],
+  city: ['city', 'cities', 'town', 'مدينه', 'مدن'],
+  country: ['country', 'countries', 'nation', 'دوله', 'دول', 'بلد', 'بلدان'],
+  product: ['product', 'products', 'item', 'items', 'sku', 'منتج', 'منتجات', 'صنف', 'اصناف', 'سلعه'],
+  category: ['category', 'categories', 'type', 'types', 'class', 'فئه', 'فئات', 'تصنيف', 'نوع', 'انواع'],
+  customer: ['customer', 'customers', 'client', 'clients', 'buyer', 'عميل', 'عملاء', 'زبون', 'زبائن'],
+  channel: ['channel', 'channels', 'قناه', 'قنوات'],
+  segment: ['segment', 'segments', 'شريحه', 'شرائح', 'قطاع', 'قطاعات'],
+  department: ['department', 'departments', 'dept', 'division', 'قسم', 'اقسام', 'اداره', 'ادارات'],
+  employee: ['employee', 'employees', 'staff', 'person', 'people', 'موظف', 'موظفين', 'موظفون'],
+  supplier: ['supplier', 'suppliers', 'vendor', 'vendors', 'مورد', 'موردين', 'موردون'],
+  store: ['store', 'stores', 'shop', 'shops', 'branch', 'branches', 'outlet', 'متجر', 'متاجر', 'فرع', 'فروع'],
+  warehouse: ['warehouse', 'warehouses', 'depot', 'مستودع', 'مستودعات', 'مخزن', 'مخازن'],
+  order: ['order', 'orders', 'transaction', 'transactions', 'invoice', 'invoices', 'طلب', 'طلبات', 'معامله', 'فاتوره', 'فواتير'],
+};
+const TIME_SYN = {
+  Year: ['year', 'years', 'yearly', 'annual', 'annually', 'سنه', 'سنوات', 'سنوي', 'عام', 'اعوام', 'سنويا'],
+  Quarter: ['quarter', 'quarters', 'quarterly', 'ربع', 'ارباع', 'ربعي', 'فصل', 'فصلي'],
+  Month: ['month', 'months', 'monthly', 'شهر', 'اشهر', 'شهور', 'شهري', 'شهريا'],
+  Weekday: ['weekday', 'weekdays', 'day of week', 'day of the week', 'يوم الاسبوع', 'ايام الاسبوع'],
+  Day: ['daily', 'per day', 'each day', 'by day', 'يومي', 'يوميا'],
+};
+const INTENT = {
+  top: ['top', 'best', 'highest', 'most', 'largest', 'biggest', 'leading', 'maximum', 'max', 'strongest', 'اعلي', 'اكثر', 'افضل', 'اكبر', 'اقوي', 'الاعلي', 'الاكثر', 'الافضل', 'الاكبر'],
+  bottom: ['bottom', 'worst', 'lowest', 'least', 'smallest', 'minimum', 'min', 'weakest', 'اقل', 'ادني', 'اسوا', 'اصغر', 'اضعف', 'الاقل', 'الادني', 'الاسوا', 'الاضعف'],
+  trend: ['trend', 'trends', 'over time', 'timeline', 'evolution', 'history', 'historical', 'اتجاه', 'تطور', 'عبر الزمن', 'علي مدار', 'بمرور الوقت', 'خلال الفتره'],
+  compare: ['compare', 'compared', 'comparison', 'versus', 'vs', 'against', 'difference between', 'قارن', 'مقارنه', 'مقابل', 'بالمقارنه', 'الفرق بين'],
+  growth: ['growth', 'grow', 'grew', 'growing', 'change', 'changed', 'increase', 'increased', 'decrease', 'decreased', 'decline', 'declined', 'drop', 'dropped', 'yoy', 'mom',
+    'نمو', 'نما', 'نمت', 'ينمو', 'تنمو', 'تغير', 'تغيرت', 'تغيير', 'زياده', 'زاد', 'زادت', 'انخفاض', 'انخفض', 'انخفضت', 'ارتفاع', 'ارتفع', 'ارتفعت', 'تراجع', 'تراجعت', 'تحسن', 'تحسنت'],
+  avg: ['average', 'avg', 'mean', 'typical', 'متوسط', 'معدل'],
+  count: ['how many', 'count', 'number of', 'kam', 'كم عدد', 'عدد', 'كم'],
+  share: ['share', 'percentage', 'percent', 'proportion', 'split', 'distribution', 'mix', 'contribution', 'نسبه', 'حصه', 'توزيع', 'مساهمه'],
+  chart: ['chart', 'graph', 'plot', 'visual', 'visualise', 'visualize', 'draw', 'رسم', 'مخطط', 'رسما', 'بياني', 'رسمه'],
+  summary: ['summary', 'summarise', 'summarize', 'insights', 'insight', 'overview', 'highlights', 'key points', 'key findings', 'tell me about', 'what stands out',
+    'ملخص', 'لخص', 'خلاصه', 'اهم النتائج', 'نظره عامه', 'ابرز', 'اهم'],
+  filter: ['filter', 'only show', 'show only', 'focus on', 'limit to', 'restrict to', 'فلتر', 'صفي', 'تصفيه', 'اعرض فقط', 'ركز علي'],
+  help: ['help', 'what can you do', 'what can i ask', 'how does this work', 'مساعده', 'ماذا يمكنك', 'ماذا يمكنني', 'ساعدني'],
+  total: ['total', 'sum', 'overall', 'altogether', 'اجمالي', 'مجموع', 'المجموع', 'الكلي'],
+  which: ['which', 'who', 'what is the best', 'what is the worst', 'اي', 'ما هو', 'ما هي', 'من هو', 'من هي'],
+};
+const MONTH_WORDS = [['january', 'jan', 'يناير', 'كانون الثاني'], ['february', 'feb', 'فبراير', 'شباط'], ['march', 'mar', 'مارس', 'اذار'], ['april', 'apr', 'ابريل', 'نيسان'],
+  ['may', 'مايو', 'ايار'], ['june', 'jun', 'يونيو', 'حزيران'], ['july', 'jul', 'يوليو', 'تموز'], ['august', 'aug', 'اغسطس', 'اب'], ['september', 'sep', 'sept', 'سبتمبر', 'ايلول'],
+  ['october', 'oct', 'اكتوبر', 'تشرين الاول'], ['november', 'nov', 'نوفمبر', 'تشرين الثاني'], ['december', 'dec', 'ديسمبر', 'كانون الاول']];
+const AR_Q = {'الاول': 1, 'الثاني': 2, 'الثالث': 3, 'الرابع': 4, 'اول': 1, 'ثاني': 2, 'ثالث': 3, 'رابع': 4};
+/* Arabic names of common places, so "الرياض" finds the value "Riyadh" */
+const AR_PLACES = {'الرياض': 'riyadh', 'جده': 'jeddah', 'جدة': 'jeddah', 'الدمام': 'dammam', 'مكه': 'makkah', 'مكه المكرمه': 'makkah', 'المدينه': 'madinah', 'المدينه المنوره': 'madinah',
+  'الخبر': 'khobar', 'الطائف': 'taif', 'تبوك': 'tabuk', 'ابها': 'abha', 'القصيم': 'qassim', 'بريده': 'buraydah', 'حائل': 'hail', 'جازان': 'jazan', 'نجران': 'najran', 'الجبيل': 'jubail',
+  'دبي': 'dubai', 'ابوظبي': 'abu dhabi', 'ابو ظبي': 'abu dhabi', 'الشارقه': 'sharjah', 'عجمان': 'ajman', 'العين': 'al ain', 'راس الخيمه': 'ras al khaimah', 'الفجيره': 'fujairah',
+  'الدوحه': 'doha', 'الكويت': 'kuwait', 'المنامه': 'manama', 'البحرين': 'bahrain', 'مسقط': 'muscat', 'عمان': 'oman', 'القاهره': 'cairo', 'مصر': 'egypt', 'عمّان': 'amman', 'الاردن': 'jordan',
+  'السعوديه': 'saudi arabia', 'الامارات': 'uae', 'قطر': 'qatar', 'الشمال': 'north', 'الجنوب': 'south', 'الشرق': 'east', 'الغرب': 'west', 'الوسطي': 'central'};
 
-/* --- the data context Claude reads (schema, not rows) --- */
-function chatContext(){
-  const lines = [`Dataset: "${S.active}" with ${ROWS.length.toLocaleString('en-US')} rows. Report: "${curReport()?.name || ''}".`, '', 'Fields:'];
+/* ---------- matching the question to the data ---------- */
+let VALS = {key: null, map: {}};
+function valueIndex(){
+  const key = S.active + '|' + ROWS.length + '|' + FIELDS.length;
+  if (VALS.key === key) return VALS.map;
+  const map = {};
   for (const f of FIELDS){
-    if (f.src === 'part' || f.src === 'records') continue;
-    if (f.src === 'calc'){ const c = calcs().find(x => x.name === f.name); lines.push(`- "${f.name}": calculated ${f.calcKind === 'measure' ? 'MEASURE (already aggregated; any agg gives the same result)' : f.type + ' per row'} = ${c?.expr}`); continue; }
-    const vals = ROWS.map(r => r[f.name]).filter(x => x != null && x !== '');
-    if (f.type === 'number'){
-      let lo = Infinity, hi = -Infinity, sum = 0; for (const x of vals){ if (x < lo) lo = x; if (x > hi) hi = x; sum += x; }
-      lines.push(`- "${f.name}": number (${fmtKind({f: f.name, agg: 'sum'})}), min ${+lo.toFixed(4)}, max ${+hi.toFixed(4)}, total ${+sum.toFixed(2)}`);
-    } else if (f.type === 'date'){
-      const sorted = vals.map(String).sort();
-      lines.push(`- "${f.name}": date, ${sorted[0]} to ${sorted[sorted.length - 1]}. Group or filter with the derived text fields "${f.name} (Year)" e.g. 2025, "${f.name} (Quarter)" e.g. 2025 Q1, "${f.name} (Month)" e.g. 2025-03, "${f.name} (Month Name)" Jan..Dec, "${f.name} (Weekday)" Mon..Sun, "${f.name} (Day)" YYYY-MM-DD.`);
-    } else {
-      const cnt = new Map(); for (const x of vals) cnt.set(x, (cnt.get(x) || 0) + 1);
-      const top = [...cnt].sort((a, b) => b[1] - a[1]).slice(0, 15).map(x => x[0]);
-      if (cnt.size > vals.length * 0.9 && cnt.size > 50) lines.push(`- "${f.name}": text identifier, unique per row (${cnt.size} values), e.g. ${top.slice(0, 3).map(x => JSON.stringify(String(x).slice(0, 40))).join(', ')}`);
-      else lines.push(`- "${f.name}": text, ${cnt.size} distinct values${cnt.size <= 15 ? ': ' : ', most common: '}${top.map(x => JSON.stringify(String(x).slice(0, 40))).join(', ')}`);
+    if (f.role !== 'dim' || f.type === 'date' || f.src === 'part') continue;
+    const seen = new Map();
+    for (const r of ROWS){ const v = r[f.name]; if (v == null || v === '') continue; const k = String(v); if (!seen.has(k)) seen.set(k, norm(k)); if (seen.size > 400) break; }
+    if (seen.size && seen.size <= 400) map[f.name] = [...seen].map(([v, n]) => ({v, n})).filter(x => x.n.length >= 2);
+  }
+  VALS = {key, map};
+  return map;
+}
+const fieldWords = name => norm(String(name).replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_\-\/]+/g, ' ')).split(' ').filter(Boolean);
+function scoreField(f, Q){
+  const fw = fieldWords(f.name), full = fw.join(' '), hit = new Set();
+  let sc = 0;
+  if (fw.length > 1 && Q.pad.includes(' ' + full + ' ')){ sc += 6; fw.forEach(w => hit.add(w)); }
+  for (const w of fw){
+    if (stems(w).some(x => Q.toks.has(x))){ sc += 3; hit.add(w); }
+    else if (w.length >= 5 && [...Q.toks].some(t => t.length >= 5 && lev(t, w) <= 1)){ sc += 2; hit.add(w); }
+  }
+  for (const [concept, syn] of Object.entries(SYN)){
+    const nsyn = syn.map(norm);
+    const words = fw.filter(w => nsyn.includes(w) || nsyn.some(s => stems(w).includes(s)));
+    if (words.length && hasAny(Q, syn)){ sc += 3; words.forEach(w => hit.add(w)); hit.add('§' + concept); }
+  }
+  return {sc, hit};
+}
+function parseQuestion(q){
+  const qn = norm(q);
+  const Q = {raw: q, qn, pad: ' ' + qn + ' ', toks: tokSet(qn), ar: AR_RE.test(q)};
+  const has = k => hasAny(Q, INTENT[k]);
+  Q.intent = Object.fromEntries(Object.keys(INTENT).map(k => [k, has(k)]));
+  // measures and dimensions mentioned by name or by a business word
+  const score = f => { const r = scoreField(f, Q); return {f, s: r.sc, hit: r.hit}; };
+  let meas = FIELDS.filter(f => f.role === 'measure' && f.src !== 'records').map(score).filter(x => x.s > 0).sort((a, b) => b.s - a.s);
+  let dims = FIELDS.filter(f => f.role === 'dim' && f.src !== 'part' && f.type !== 'date').map(score).filter(x => x.s > 0).sort((a, b) => b.s - a.s);
+  // a column matched only by a word that belongs to a better-matched column of the other kind is dropped
+  // ("average discount" is not a breakdown by "Discount Band"; "how many orders" is not "Avg Order Value")
+  const covered = (x, others) => others.some(o => o.s > x.s ? true : o.s === x.s && o === others[0]) && [...x.hit].every(w => others.some(o => o.s >= x.s && o.hit.has(w)));
+  const counting = hasAny(Q, INTENT.count) && !hasAny(Q, INTENT.avg) && !hasAny(Q, INTENT.total);
+  if (counting){ meas = meas.filter(x => !(dims[0] && [...x.hit].every(w => dims[0].hit.has(w)))); }
+  else dims = dims.filter(x => !covered(x, meas));
+  Q.measures = meas.filter(x => x.s >= meas[0]?.s - 1).map(x => x.f.name).slice(0, 3);
+  Q.dims = dims.map(x => x.f.name);
+  Q.matchedAny = meas.length + dims.length > 0;
+  // values of dimensions ("Riyadh", "Laptop"), including Arabic place names
+  const idx = valueIndex(), found = [];
+  const arAlias = Object.entries(AR_PLACES).filter(([a]) => Q.pad.includes(' ' + norm(a) + ' ') || stems(norm(a)).some(x => Q.toks.has(x))).map(([, e]) => e);
+  const measureWords = new Set(Q.measures.flatMap(fieldWords));
+  for (const [f, vals] of Object.entries(idx)){
+    for (const {v, n} of vals){
+      if (measureWords.has(n) || Q.dims.some(d => norm(d) === n)) continue;
+      if (Q.pad.includes(' ' + n + ' ') || (AR_RE.test(n) && stems(n).some(x => x !== n && Q.toks.has(x))) || arAlias.includes(n)) found.push({f, v, len: n.length});
     }
   }
-  lines.push(`- "${RECORDS}": count of rows (use agg "count").`);
-  const sel = Object.entries(S.sel).filter(([, x]) => x.size);
-  lines.push('', `Report filters the user currently has selected: ${sel.length ? sel.map(([f, x]) => `${f} in [${[...x].join(', ')}]`).join('; ') : 'none'}.`);
-  lines.push(`Report pages: ${S.pages.map(pg => `"${pg.name}" (${pg.visuals.slice(0, 8).map(v => v.title || autoTitle(effective(v))).join('; ')})`).join(' | ').slice(0, 3000)}`);
-  lines.push(`The user is looking at page "${page().name}".`);
-  if (!CH.toolsOK) lines.push('', 'Pre-computed summaries (tools are unavailable, answer only from these):', chatDigest());
-  return lines.join('\n');
+  found.sort((a, b) => b.len - a.len);
+  const used = [];
+  Q.values = found.filter(x => { const n = norm(x.v); if (used.some(u => u.includes(n))) return false; used.push(n); return true; });
+  // dates: years, quarters, months
+  const date = FIELDS.find(f => f.type === 'date')?.name;
+  Q.date = date;
+  Q.years = [...qn.matchAll(/(?:^|\s)((?:19|20)\d{2})(?=\s|$)/g)].map(m => m[1]);
+  const qm = qn.match(/(?:^|\s)q([1-4])(?=\s|$)/) || qn.match(/quarter\s*([1-4])/) || qn.match(/(first|second|third|fourth)\s+quarter/);
+  Q.quarter = qm ? ({first: 1, second: 2, third: 3, fourth: 4}[qm[1]] || +qm[1]) : null;
+  if (!Q.quarter) for (const [w, n] of Object.entries(AR_Q)) if (Q.pad.includes(' ربع ' + w + ' ') || Q.pad.includes(' الربع ' + w + ' ')) Q.quarter = n;
+  Q.months = MONTH_WORDS.map((ws, i) => ws.some(w => { const n = norm(w); return n.length > 2 && (n.includes(' ') ? Q.pad.includes(' ' + n + ' ') : Q.toks.has(n)); }) ? i : -1).filter(i => i >= 0);
+  if (Q.months.length > 3) Q.months = [];   // "may" and similar words: only treat as months when few are named
+  Q.grain = Object.keys(TIME_SYN).find(g => hasAny(Q, TIME_SYN[g])) || null;
+  const nm = qn.match(/(?:top|bottom|best|worst|first|last|اعلي|اقل|افضل|اسوا|اكثر|اكبر)\s*(\d{1,2})(?!\d)/) || qn.match(/(?:^|\s)(\d{1,2})\s+(?:top|best|worst|highest|lowest|اعلي|اقل)/);
+  Q.n = nm ? Math.min(+nm[1], 50) : null;
+  if (!Q.n && hasAny(Q, INTENT.which) && (hasAny(Q, INTENT.top) || hasAny(Q, INTENT.bottom))) Q.n = 1;
+  return Q;
 }
-function chatDigest(){
-  const ms = FIELDS.filter(f => f.role === 'measure' && f.src !== 'records').slice(0, 4).map(f => ({f: f.name, agg: f.calcKind === 'measure' ? 'sum' : 'sum'}));
-  const dims = FIELDS.filter(f => f.role === 'dim' && (f.src === 'col' || f.src === 'calc' || f.part === 'Year' || f.part === 'Month') && new Set(ROWS.slice(0, 3000).map(r => r[f.name])).size <= 40).slice(0, 8);
-  const out = [];
-  for (const d of dims){
-    const g = groupRows(ROWS, r => keyOf(r[d.name]));
-    out.push(`By ${d.name}: ` + [...g].map(([k, rs]) => `${k}: ${ms.map(m => `${measureLabel(m)}=${fmtVal(measureVal(m, rs), m)}`).join(', ')}, rows=${rs.length}`).join(' | '));
+
+/* ---------- answering ---------- */
+const MEAS_DEFAULT = () => {
+  for (const v of page()?.visuals || []) if (v.type === 'kpi' && v.measures[0] && !missingFields(v).length) return v.measures[0];
+  const num = FIELDS.find(f => f.role === 'measure' && f.src === 'col');
+  return num ? {f: num.name, agg: 'sum'} : {f: RECORDS, agg: 'count'};
+};
+const DIM_DEFAULT = (skip = {}) => {
+  for (const types of [['bar', 'column', 'stacked', 'donut', 'pie', 'treemap', 'funnel'], ['matrix', 'table', 'slicer']]) for (const v of page()?.visuals || []){
+    if (!types.includes(v.type) || missingFields(v).length) continue;
+    const d = effective(v).dims?.[0]; if (d && FMAP.get(d)?.src !== 'part' && !skip[d]) return d;
   }
-  return out.join('\n').slice(0, 60000);
+  return FIELDS.find(f => f.role === 'dim' && f.src === 'col' && f.type === 'string' && !skip[f.name] && (valueIndex()[f.name] || []).length >= 2)?.name || null;
+};
+function qrows(filters){
+  const base = globalRows();
+  return filters.length ? base.filter(r => filters.every(([f, vals]) => vals.includes(keyOf(r[f])))) : base;
 }
-function chatInstructions(){
-  return `You are the data analyst built into Miyar, a business intelligence app. Answer the user's questions about their dataset.
-
-${chatContext()}
-
-Rules:
-- Every number in your answer must come from a tool result. Never estimate or invent figures. Call query_data as often as needed; you may call several tools in one round.
-- When the user names a value (possibly misspelled, plural, abbreviated, or in Arabic or another language), call distinct_values to find the exact value before filtering.
-- Answer over the whole dataset unless the user asks about what is currently filtered or selected in the report; then set apply_report_filters to true.
-- Reply in the language of the user's latest message. For Arabic, write clear Modern Standard Arabic; keep field names and data values as they appear in the data, adding an Arabic translation in parentheses the first time when helpful. Use Western digits (0-9) and the formatted values from tool results.
-- Do not describe your tool calls or say what you are about to do. Write only the final answer: a direct answer with the key numbers first (1-2 sentences), then a short bullet list or a small pipe table only if it helps. Use **bold** for key figures. Keep it under about 180 words unless the user asks for detail.
-- For growth or change, compute (new - old) / old and say which periods you compared.
-- Call add_visual only when the user asks to see a chart, graph, plot or visual. Call apply_report_filter only when the user asks to filter the report. Mention what you added or changed in one short sentence.
-- If the data cannot answer the question, say so plainly and suggest a related question it can answer.`;
+function ranked(rows, dim, m){
+  const g = groupRows(rows, r => keyOf(r[dim]));
+  return [...g].map(([k, rs]) => ({k, v: measureVal(m, rs)})).filter(x => x.v != null);
 }
+const pctStr = x => (x >= 0 ? '▲ ' : '▼ ') + Math.abs(x * 100).toFixed(1) + '%';
+const additive = m => m.f === RECORDS || (['sum', 'count'].includes(m.agg) && !isCalcMeasure(m.f));
+function sahil(q){
+  if (!ds() || !ROWS.length) return {text: T().nodata};
+  const chat = curChat(), Q = parseQuestion(q), ar = Q.ar, I = Q.intent;
+  const L = (en, a) => ar ? a : en;
+  const F = n => shortName(n);
+  // follow-ups ("and Jeddah?", "what about 2024?") reuse the last measure and breakdown
+  const ctx = chat.ctx || {};
+  const followUp = /^(and|what about|how about|also|و|وماذا عن|ماذا عن|وكم|وما|طيب)\b/.test(Q.qn) || (!Q.measures.length && !Q.dims.length && (Q.values.length || Q.years.length || Q.months.length));
+  if (I.help) return {text: helpText(ar)};
+  if (followUp && ctx.kind){
+    if (ctx.kind === 'trend' && !Q.dims.length) I.trend = true;
+    if (ctx.kind === 'break' && !Q.dims.length && !I.trend){ I.by = true; if (!I.top && !I.bottom){ I.top = ctx.top; I.bottom = ctx.bottom; } if (!Q.n && ctx.n) Q.n = ctx.n; if (!I.share) I.share = ctx.share; }
+  }
+  const understood = Q.matchedAny || Q.values.length || Q.years.length || Q.months.length || Q.quarter || Q.grain || I.summary || I.count ||
+    ((I.top || I.bottom || I.trend || I.growth || I.share || I.compare || I.chart || I.total) && true);
+  if (!understood){
+    const fieldsList = FIELDS.filter(f => f.src === 'col' || f.src === 'calc').slice(0, 10).map(f => f.name).join(', ');
+    return {text: L(`I can only answer questions about the data in this report, and I couldn't match that to it. The data has: ${fieldsList}.\n\nTry “${samplePrompts().en[1] || samplePrompts().en[0]}”, or type **help** for more examples.`,
+      `أستطيع الإجابة فقط عن بيانات هذا التقرير، ولم أجد ما يطابق سؤالك. تحتوي البيانات على: ${fieldsList}.\n\nجرّب «${samplePrompts().ar[1] || samplePrompts().ar[0]}»، أو اكتب **مساعدة** لمزيد من الأمثلة.`)};
+  }
+  // measure
+  let m;
+  const mName = Q.measures[0] || (followUp ? ctx.m?.f : null);
+  if (I.count && !I.avg && !Q.measures.length){
+    const cd = Q.dims[0];
+    m = cd && !I.by ? {f: cd, agg: 'dcount'} : {f: RECORDS, agg: 'count'};
+  } else if (mName){
+    const fd = FMAP.get(mName);
+    m = {f: mName, agg: isCalcMeasure(mName) ? 'sum' : I.avg ? 'avg' : fd?.type === 'number' ? 'sum' : 'dcount'};
+  } else m = followUp && ctx.m ? ctx.m : MEAS_DEFAULT();
+  if (!FMAP.has(m.f) && m.f !== RECORDS) m = MEAS_DEFAULT();
+  const ML = m.f === RECORDS ? L('rows', 'عدد الصفوف') : m.agg === 'avg' ? L(`average ${m.f}`, `متوسط ${m.f}`) : m.agg === 'dcount' ? L(`number of ${m.f}`, `عدد ${m.f}`) : m.f;
+  // filters from values and dates
+  const filters = [];
+  const byField = {};
+  for (const x of Q.values) (byField[x.f] ||= []).push(x.v);
+  for (const [f, vals] of Object.entries(byField)) filters.push([f, vals]);
+  const d = Q.date;
+  if (d){
+    const yr = `${d} (Year)`, qt = `${d} (Quarter)`, mo = `${d} (Month)`, mn = `${d} (Month Name)`;
+    if (Q.quarter && Q.years.length) filters.push([qt, Q.years.map(y => `${y} Q${Q.quarter}`)]);
+    else if (Q.quarter) filters.push([qt, [...new Set(ROWS.map(r => r[qt]))].filter(v => String(v).endsWith('Q' + Q.quarter))]);
+    else if (Q.months.length && Q.years.length === 1) filters.push([mo, Q.months.map(i => `${Q.years[0]}-${String(i + 1).padStart(2, '0')}`)]);
+    else if (Q.months.length) filters.push([mn, Q.months.map(i => MONTHS[i])]);
+    else if (Q.years.length && !(I.compare || I.growth) ) filters.push([yr, Q.years]);
+  }
+  if (followUp && ctx.filters){
+    const isTime = f => d && f.startsWith(d + ' (');
+    const newTime = Q.years.length || Q.months.length || Q.quarter;
+    for (const [f, v] of ctx.filters) if (!filters.some(([g]) => g === f) && !(isTime(f) && newTime) && !byField[f]) filters.push([f, v]);
+  }
+  const fText = filters.length ? L(' for ', ' لـ ') + filters.map(([f, v]) => `${F(f)} = ${v.slice(0, 4).join(L(' or ', ' أو '))}`).join(L(' and ', ' و')) : '';
+  const rows = qrows(filters);
+  const selNote = Object.values(S.sel).some(x => x.size) ? L('\n\n_Using the report’s current filters._', '\n\n_مع تطبيق عوامل التصفية الحالية في التقرير._') : '';
+  const remember = extra => { chat.ctx = {m, filters, ...extra}; };
+  if (!rows.length) return {text: L(`No rows match${fText}. Try a different value or time period.`, `لا توجد صفوف مطابقة${fText}. جرّب قيمة أو فترة زمنية أخرى.`)};
+  const fmt = (v, c = Math.abs(v ?? 0) >= 1e5) => fmtVal(v, m, c);
 
-/* --- tools that run in this page --- */
-function fieldOrThrow(f){
-  f = String(f ?? '');
-  if (FMAP.has(f)) return f;
-  const ci = FIELDS.find(x => x.name.toLowerCase() === f.toLowerCase()); if (ci) return ci.name;
-  throw new Error(`Unknown field "${f}". Valid fields: ${FIELDS.filter(x => x.src !== 'records').map(x => x.name).join(', ')}, ${RECORDS}`);
-}
-function applyToolFilters(rows, filters){
-  for (const flt of (Array.isArray(filters) ? filters : [])){
-    const f = fieldOrThrow(flt.field), op = String(flt.op || 'in'), vals = (Array.isArray(flt.values) ? flt.values : [flt.values]).filter(x => x != null);
-    const num = FMAP.get(f).type === 'number';
-    const lower = new Set(vals.map(x => String(x).toLowerCase()));
-    const cmp = r => { const x = r[f]; return num ? Number(x) : String(x ?? ''); };
-    const a = num ? Number(vals[0]) : String(vals[0] ?? ''), b = num ? Number(vals[1]) : String(vals[1] ?? '');
-    rows = rows.filter(r => {
-      const x = cmp(r);
-      switch (op){
-        case 'not_in': return !lower.has(keyOf(r[f]).toLowerCase());
-        case 'gt': return x > a; case 'gte': return x >= a; case 'lt': return x < a; case 'lte': return x <= a;
-        case 'between': return x >= a && x <= b;
-        case 'contains': return keyOf(r[f]).toLowerCase().includes(String(vals[0] ?? '').toLowerCase());
-        default: return lower.has(keyOf(r[f]).toLowerCase());
+  // summary of the page
+  if (I.summary && !Q.measures.length && !Q.dims.length){
+    remember({});
+    const items = tickerItems();
+    return {text: L('**Here is what stands out on this page:**\n', '**أبرز ما في هذه الصفحة:**\n') + items.map(it => `- ${it.label}: **${it.value}**${it.sub ? ' ' + it.sub : ''}${it.delta ? ` (${it.delta.up ? '▲' : '▼'} ${it.delta.text} ${it.delta.note})` : ''}`).join('\n') + selNote};
+  }
+  // filter the report
+  if (I.filter && filters.length){
+    for (const [f, vals] of filters) S.sel[f] = new Set(vals.map(String));
+    renderAll(); remember({});
+    return {text: L(`Done. The report is now filtered${fText}. ${globalRows().length.toLocaleString()} rows are in view.`, `تم. أصبح التقرير مُصفّى${fText}. عدد الصفوف المعروضة ${globalRows().length.toLocaleString()}.`), did: [L('Filtered the report', 'تمت تصفية التقرير')]};
+  }
+  const grainOf = () => {
+    if (Q.grain && Q.grain !== 'Day') return Q.grain;
+    if (Q.grain === 'Day') return 'Day';
+    const ys = new Set(rows.map(r => r[`${d} (Year)`]).filter(Boolean)).size;
+    return ys > 3 ? 'Year' : 'Month';
+  };
+  // compare: two or more years, or two or more values of one field
+  const multiField = Object.entries(byField).find(([, v]) => v.length >= 2);
+  if ((I.compare || I.growth) && d && Q.years.length >= 2){
+    const yf = `${d} (Year)`, base = qrows(filters.filter(([f]) => f !== yf));
+    const ys = [...Q.years].sort(), vals = ys.map(y => measureVal(m, base.filter(r => keyOf(r[yf]) === y)));
+    remember({dim: yf});
+    const ch = vals[0] ? (vals.at(-1) - vals[0]) / Math.abs(vals[0]) : null;
+    return {text: `**${ML}: ${ys.join(L(' vs ', ' مقابل '))}**${fText}\n` + ys.map((y, i) => `- ${y}: **${fmt(vals[i])}**`).join('\n') +
+      (ch != null ? L(`\n\n${ys.at(-1)} is **${pctStr(ch)}** compared with ${ys[0]}.`, `\n\n${ys.at(-1)} مقارنة بـ ${ys[0]}: **${pctStr(ch)}**.`) : '') + selNote,
+      chart: {type: 'column', dims: [yf], measures: [m], vfilters: [...filters.filter(([f]) => f !== yf), [yf, ys]], title: `${ML} · ${ys.join(' vs ')}`}};
+  }
+  if (multiField && (I.compare || !Q.dims.length)){
+    const [f, vals] = multiField, base = qrows(filters.filter(([x]) => x !== f));
+    const res = vals.map(v => ({k: v, v: measureVal(m, base.filter(r => keyOf(r[f]) === v))})).sort((a, b) => (b.v ?? 0) - (a.v ?? 0));
+    remember({dim: f});
+    const [a, b] = res, diff = b?.v ? (a.v - b.v) / Math.abs(b.v) : null;
+    return {text: `**${ML}: ${res.map(x => x.k).join(L(' vs ', ' مقابل '))}**\n` + res.map(x => `- ${x.k}: **${fmt(x.v)}**`).join('\n') +
+      (diff != null ? L(`\n\n**${a.k}** is **${(diff * 100).toFixed(1)}% higher** than ${b.k}.`, `\n\n**${a.k}** أعلى من ${b.k} بنسبة **${(diff * 100).toFixed(1)}%**.`) : '') + selNote,
+      chart: {type: 'column', dims: [f], measures: [m], vfilters: [...filters.filter(([x]) => x !== f), [f, vals]], title: `${ML} · ${vals.join(' vs ')}`}};
+  }
+  // growth: latest period against the one before
+  if (I.growth && d){
+    const g = Q.years.length === 1 ? 'Month' : (new Set(rows.map(r => r[`${d} (Year)`])).size > 1 ? 'Year' : (Q.grain === 'Quarter' ? 'Quarter' : 'Month'));
+    const tf = `${d} (${g})`, pts = ranked(rows, tf, m).filter(x => x.k !== '(Blank)').sort((x, y) => labelCmp(x.k, y.k));
+    if (pts.length >= 2){
+      const [p0, p1] = pts.slice(-2), ch = p0.v ? (p1.v - p0.v) / Math.abs(p0.v) : null;
+      const first = pts[0], overall = first.v ? (p1.v - first.v) / Math.abs(first.v) : null;
+      remember({dim: tf});
+      return {text: L(`**${ML}${fText}** in **${p1.k}** was **${fmt(p1.v)}**, ${ch == null ? '' : `**${pctStr(ch)}**`} compared with ${p0.k} (${fmt(p0.v)}).`,
+          `بلغ **${ML}${fText}** في **${p1.k}** نحو **${fmt(p1.v)}**، ${ch == null ? '' : `**${pctStr(ch)}**`} مقارنة بـ ${p0.k} (${fmt(p0.v)}).`) +
+        (pts.length > 2 && overall != null ? L(` Since ${first.k} it has changed **${pctStr(overall)}**.`, ` ومنذ ${first.k} تغيّر بنسبة **${pctStr(overall)}**.`) : '') + selNote,
+        chart: {type: 'line', dims: [tf], measures: [m], vfilters: filters, title: L(`${ML} by ${g.toLowerCase()}`, `${ML} حسب ${g}`)}};
+    }
+  }
+  // trend over time
+  if (d && (I.trend || (Q.grain && !Q.dims.length) || (I.chart && Q.grain))){
+    const g = grainOf(), tf = `${d} (${g})`;
+    const pts = ranked(rows, tf, m).filter(x => x.k !== '(Blank)').sort((x, y) => labelCmp(x.k, y.k));
+    if (pts.length){
+      const hi = pts.reduce((a, b) => b.v > a.v ? b : a), lo = pts.reduce((a, b) => b.v < a.v ? b : a);
+      const cyc = g === 'Weekday';
+      const [p0, p1] = pts.slice(-2), ch = !cyc && pts.length > 1 && p0.v ? (p1.v - p0.v) / Math.abs(p0.v) : null;
+      remember({dim: tf, kind: 'trend'});
+      if (I.top || I.bottom){
+        const order = [...pts].sort((a, b) => I.bottom ? a.v - b.v : b.v - a.v), n = Q.n || 1, gl = {Year: L('year', 'سنة'), Quarter: L('quarter', 'ربع'), Month: L('month', 'شهر'), Weekday: L('day of the week', 'يوم'), Day: L('day', 'يوم')}[g];
+        const word = I.bottom ? L('Worst', 'أسوأ') : L('Best', 'أفضل');
+        return {text: n === 1 ? L(`${word} ${gl} for **${ML}**${fText}: **${order[0].k}** with **${fmt(order[0].v)}**.`, `${word} ${gl} من حيث **${ML}**${fText}: **${order[0].k}** بقيمة **${fmt(order[0].v)}**.`)
+            : L(`**${word} ${n} periods for ${ML}${fText}:**\n`, `**${word} ${n} فترات لـ ${ML}${fText}:**\n`) + order.slice(0, n).map((x, i) => `${i + 1}. ${x.k}: **${fmt(x.v)}**`).join('\n') + selNote,
+          chart: {type: cyc ? 'column' : 'line', dims: [tf], measures: [m], vfilters: filters, title: L(`${ML} by ${g.toLowerCase()}`, `${ML} حسب ${g}`)}, chartNow: I.chart};
       }
-    });
+      return {text: L(`**${ML}${fText} by ${g.toLowerCase()}** (${pts.length} periods): highest in **${hi.k}** (${fmt(hi.v)}), lowest in **${lo.k}** (${fmt(lo.v)}).`,
+          `**${ML}${fText} حسب ${g}** (${pts.length} فترة): الأعلى في **${hi.k}** (${fmt(hi.v)})، والأقل في **${lo.k}** (${fmt(lo.v)}).`) +
+        (ch != null ? L(` The latest, ${p1.k}, is **${pctStr(ch)}** against ${p0.k}.`, ` وآخر فترة ${p1.k} جاءت **${pctStr(ch)}** مقارنة بـ ${p0.k}.`) : '') + selNote,
+        chart: {type: cyc ? 'column' : 'line', dims: [tf], measures: [m], vfilters: filters, title: L(`${ML} by ${g.toLowerCase()}`, `${ML} حسب ${g}`)}, chartNow: I.chart};
+    }
   }
-  return rows;
+  // breakdowns: ranking, shares, "by X"
+  const wantsBreak = I.top || I.bottom || I.share || I.by || Q.dims.length || I.chart;
+  const dim = Q.dims.find(x => !byField[x]) || (wantsBreak ? (followUp && ctx.dim && !FMAP.get(ctx.dim)?.part && !byField[ctx.dim] ? ctx.dim : DIM_DEFAULT(byField)) : null) || (Q.grain && d ? `${d} (${grainOf()})` : null);
+  if (dim && wantsBreak && !(I.count && !Q.measures.length && !I.by && !I.top && !I.bottom)){
+    let list = ranked(rows, dim, m);
+    if (!list.length) return {text: L('There is nothing to break down for that.', 'لا يوجد ما يمكن تقسيمه لهذا السؤال.')};
+    const total = measureVal(m, rows), canShare = additive(m) && total;
+    const n = Q.n || (I.top || I.bottom ? 5 : 10);
+    list.sort((a, b) => I.bottom ? a.v - b.v : b.v - a.v);
+    const shown = list.slice(0, n);
+    remember({dim, kind: 'break', top: I.top, bottom: I.bottom, share: I.share, n: Q.n});
+    const share = v => canShare ? ` (${(v / total * 100).toFixed(1)}%)` : '';
+    let text;
+    if (I.top || I.bottom){
+      const word = I.bottom ? L('Lowest', 'أقل') : L('Top', 'أعلى');
+      text = L(`**${word} ${shown.length} ${F(dim)} by ${ML}${fText}:**\n`, `**${word} ${shown.length} ${F(dim)} حسب ${ML}${fText}:**\n`) +
+        shown.map((x, i) => `${i + 1}. ${x.k}: **${fmt(x.v)}**${share(x.v)}`).join('\n');
+      if (shown.length === 1 || Q.n === 1) text = L(`**${shown[0].k}** has the ${I.bottom ? 'lowest' : 'highest'} ${ML}${fText}: **${fmt(shown[0].v)}**${share(shown[0].v)}.`,
+        `**${shown[0].k}** لديه ${I.bottom ? 'أقل' : 'أعلى'} ${ML}${fText}: **${fmt(shown[0].v)}**${share(shown[0].v)}.`);
+      else if (list.length > shown.length) text += L(`\n\nOut of ${list.length} ${F(dim)} in total.`, `\n\nمن أصل ${list.length} ${F(dim)}.`);
+    } else {
+      const top = list[0], low = list.at(-1);
+      text = L(`**${ML}${fText} by ${F(dim)}** (${list.length} values): **${top.k}** leads with **${fmt(top.v)}**${share(top.v)}`, `**${ML}${fText} حسب ${F(dim)}** (${list.length} قيمة): يتصدّر **${top.k}** بقيمة **${fmt(top.v)}**${share(top.v)}`) +
+        (list.length > 2 ? L(`, and **${low.k}** is lowest at ${fmt(low.v)}${share(low.v)}.`, `، والأقل **${low.k}** بقيمة ${fmt(low.v)}${share(low.v)}.`) : '.') +
+        `\n\n| ${F(dim)} | ${ML} |${canShare ? L(' Share |', ' النسبة |') : ''}\n|---|---|${canShare ? '---|' : ''}\n` +
+        shown.map(x => `| ${x.k} | ${fmt(x.v, true)} |${canShare ? ` ${(x.v / total * 100).toFixed(1)}% |` : ''}`).join('\n') +
+        (list.length > shown.length ? L(`\n\nShowing the top ${shown.length} of ${list.length}.`, `\n\nعرض أعلى ${shown.length} من ${list.length}.`) : '');
+    }
+    const keys = shown.map(x => x.k);
+    const type = I.share ? 'donut' : FMAP.get(dim)?.src === 'part' ? 'column' : 'bar';
+    return {text: text + selNote, chartNow: I.chart,
+      chart: {type, dims: [dim], measures: [m], vfilters: [...filters, ...(list.length > shown.length ? [[dim, keys]] : [])], sort: I.bottom ? 'asc' : 'desc',
+        title: L(`${ML} by ${F(dim)}`, `${ML} حسب ${F(dim)}`)}};
+  }
+  // single figures: count, average, total
+  const val = measureVal(m, rows);
+  remember({});
+  if (I.count && m.agg === 'dcount') return {text: L(`There are **${fmt(val)}** different ${F(m.f)}${fText}.`, `يوجد **${fmt(val)}** ${F(m.f)} مختلف${fText}.`) + selNote};
+  if (m.f === RECORDS) return {text: L(`There are **${val.toLocaleString()}** rows${fText}.`, `يوجد **${val.toLocaleString()}** صف${fText}.`) + selNote};
+  const word = m.agg === 'avg' ? '' : isCalcMeasure(m.f) || fmtKind(m) === 'percent' ? '' : L('Total ', 'إجمالي ');
+  return {text: L(`**${word}${ML}${fText}** is **${fmt(val)}**`, `**${word}${ML}${fText}** هو **${fmt(val)}**`) +
+    L(` across ${rows.length.toLocaleString()} rows.`, ` عبر ${rows.length.toLocaleString()} صف.`) + selNote};
 }
-function toolMeasures(list){
-  const ms = (Array.isArray(list) ? list : []).map(m => { const f = String(m?.field ?? m) === RECORDS ? RECORDS : fieldOrThrow(m?.field ?? m);
-    const agg = AGGS[m?.agg] ? m.agg : defaultAgg(f); return {f, agg: f === RECORDS ? 'count' : agg}; });
-  return ms.length ? ms : [{f: RECORDS, agg: 'count'}];
+function helpText(ar){
+  const m = MEAS_DEFAULT().f, d = DIM_DEFAULT() || 'category', y = Q_years();
+  return ar ? `يمكنني الإجابة عن أسئلة مثل:\n- ما إجمالي ${m}؟\n- أعلى 5 ${d} حسب ${m}\n- ${m} حسب الشهر\n${y.length > 1 ? `- قارن ${y.at(-2)} و ${y.at(-1)}\n` : ''}- أي ${d} لديه أقل ${m}؟\n- ما نسبة كل ${d} من ${m}؟\n- لخّص هذه الصفحة\n- اعرض ${m} حسب ${d} في رسم بياني\n\nيمكنك أيضًا متابعة السؤال، مثل «وماذا عن 2024؟».`
+    : `I can answer questions like:\n- What is the total ${m}?\n- Top 5 ${d} by ${m}\n- ${m} by month\n${y.length > 1 ? `- Compare ${y.at(-2)} and ${y.at(-1)}\n` : ''}- Which ${d} has the lowest ${m}?\n- What share of ${m} does each ${d} have?\n- Summarize this page\n- Show ${m} by ${d} as a chart\n\nYou can follow up too, for example “what about 2024?”.`;
 }
-const round = x => x == null ? null : Math.abs(x) >= 100 ? Math.round(x * 100) / 100 : +x.toPrecision(6);
-function chatTools(msg){
-  const status = t => { msg.status = t; renderChatMsg(msg); };
-  return [
-    {name: 'query_data',
-     description: 'Aggregate the dataset. Groups rows by up to 3 fields and computes measures (sum, avg, min, max, count, dcount, median). Returns columns, rows (raw value and formatted text), the number of matching rows and grand totals. Use this for every number you report.',
-     inputSchema: {type: 'object', properties: {
-       group_by: {type: 'array', items: {type: 'string'}, description: 'Field names to group by, e.g. ["Region"] or ["Order Date (Year)", "Category"]. Empty for grand totals.'},
-       measures: {type: 'array', items: {type: 'object', properties: {field: {type: 'string'}, agg: {type: 'string', enum: Object.keys(AGGS)}}, required: ['field']}, description: 'What to compute, e.g. [{"field":"Revenue","agg":"sum"}]. Calculated measures ignore agg.'},
-       filters: {type: 'array', items: {type: 'object', properties: {field: {type: 'string'}, op: {type: 'string', enum: ['in','not_in','gt','gte','lt','lte','between','contains']}, values: {type: 'array', items: {}}}, required: ['field', 'values']}},
-       sort_by: {type: 'string', description: 'A group_by field or a measure field to sort on. Defaults to the first measure.'},
-       sort_dir: {type: 'string', enum: ['desc', 'asc']},
-       limit: {type: 'number', description: 'Max rows to return, default 30, max 200.'},
-       apply_report_filters: {type: 'boolean', description: 'true to respect the selections the user has made in the report.'}}},
-     execute(input){
-       const gb = (Array.isArray(input.group_by) ? input.group_by : []).slice(0, 3).map(fieldOrThrow);
-       const ms = toolMeasures(input.measures);
-       status(T().q(ms.map(m => m.f === RECORDS ? 'rows' : m.f).join(', ') + (gb.length ? ' × ' + gb.map(shortName).join(', ') : '')));
-       let rows = applyToolFilters(input.apply_report_filters ? globalRows() : ROWS, input.filters);
-       const g = gb.length ? groupRows(rows, r => gb.map(f => keyOf(r[f])).join('\u0001')) : new Map([['', rows]]);
-       let out = [...g].map(([k, rs]) => ({keys: gb.length ? k.split('\u0001') : [], vals: ms.map(m => measureVal(m, rs)), n: rs.length}));
-       const sb = input.sort_by ? String(input.sort_by) : null, dir = input.sort_dir === 'asc' ? 1 : -1;
-       const ki = sb ? gb.findIndex(f => f.toLowerCase() === sb.toLowerCase()) : -1;
-       const mi = sb ? Math.max(0, ms.findIndex(m => m.f.toLowerCase() === sb.toLowerCase() || measureLabel(m).toLowerCase() === sb.toLowerCase())) : 0;
-       if (ki >= 0) out.sort((a, b) => labelCmp(a.keys[ki], b.keys[ki]) * dir);
-       else if (!sb && gb.length && isOrdinal(gb[0])) out.sort((a, b) => labelCmp(a.keys[0], b.keys[0]));
-       else out.sort((a, b) => ((a.vals[mi] ?? -Infinity) - (b.vals[mi] ?? -Infinity)) * dir);
-       const limit = clamp(Number(input.limit) || 30, 1, 200);
-       return {matching_rows: rows.length, groups: out.length, returned: Math.min(limit, out.length),
-         columns: [...gb, ...ms.map(measureLabel), 'rows'],
-         rows: out.slice(0, limit).map(o => [...o.keys, ...o.vals.map((x, i) => ({value: round(x), text: fmtVal(x, ms[i])})), o.n]),
-         grand_total: ms.map((m, i) => ({measure: measureLabel(m), value: round(measureVal(m, rows)), text: fmtVal(measureVal(m, rows), m)}))};
-     }},
-    {name: 'distinct_values',
-     description: 'List the distinct values of a field with row counts, most common first. Use it to find the exact spelling of a value the user mentioned before filtering on it.',
-     inputSchema: {type: 'object', properties: {field: {type: 'string'}, search: {type: 'string', description: 'Optional case-insensitive substring.'}, limit: {type: 'number'}}, required: ['field']},
-     execute(input){
-       const f = fieldOrThrow(input.field); status(T().v(shortName(f)));
-       const q = String(input.search || '').toLowerCase();
-       const cnt = new Map(); for (const r of ROWS){ const k = keyOf(r[f]); if (!q || k.toLowerCase().includes(q)) cnt.set(k, (cnt.get(k) || 0) + 1); }
-       return {field: f, distinct: cnt.size, values: [...cnt].sort((a, b) => b[1] - a[1]).slice(0, clamp(Number(input.limit) || 50, 1, 200)).map(([value, rows]) => ({value, rows}))};
-     }},
-    {name: 'add_visual',
-     description: 'Add a chart to the report page the user is looking at. Use only when the user asks to see a chart or visual. Returns the title of the chart added.',
-     inputSchema: {type: 'object', properties: {
-       type: {type: 'string', enum: ['column','bar','line','area','stacked','stacked100','pie','donut','treemap','waterfall','scatter','heatmap','table','matrix','kpi','multicard','gauge','funnel']},
-       title: {type: 'string', description: 'Short title in the language of the conversation.'},
-       axis: {type: 'array', items: {type: 'string'}, description: 'Category field(s). Use "<date> (Month)" or "(Year)" for time.'},
-       legend: {type: 'string', description: 'Optional field to split series by.'},
-       values: {type: 'array', items: {type: 'object', properties: {field: {type: 'string'}, agg: {type: 'string'}}, required: ['field']}},
-       filters: {type: 'array', items: {type: 'object', properties: {field: {type: 'string'}, values: {type: 'array', items: {type: 'string'}}}, required: ['field', 'values']}, description: 'Keep only rows whose field equals one of the values (exact values).'}},
-       required: ['type', 'values']},
-     execute(input){
-       const type = TYPES[input.type] ? String(input.type) : 'column';
-       const dims = (Array.isArray(input.axis) ? input.axis : []).slice(0, 4).map(fieldOrThrow);
-       const legend = input.legend ? fieldOrThrow(input.legend) : null;
-       const measures = toolMeasures(input.values);
-       const vfilters = (Array.isArray(input.filters) ? input.filters : []).map(x => [fieldOrThrow(x.field), (Array.isArray(x.values) ? x.values : [x.values]).map(String)]);
-       const v = newVisual(type, {title: String(input.title || '').slice(0, 80), dims, legend: TYPES[type].wells.legend ? legend : null, measures, vfilters});
-       if (['line','area','column','table','matrix'].includes(type) || dims.length > 1) v.w = Math.max(v.w, 6);
-       page().visuals.push(v); S.selected = v.id; changed();
-       requestAnimationFrame(() => $(`.card[data-id="${v.id}"]`)?.scrollIntoView({block: 'nearest', behavior: 'smooth'}));
-       const title = v.title || autoTitle(v);
-       (msg.did ||= []).push(T().added(title));
-       return `Added "${title}" to page "${page().name}". The user can undo it.`;
-     }},
-    {name: 'apply_report_filter',
-     description: 'Filter the whole report to the given values of a field (the same as clicking them). Pass an empty values list to clear that field\'s filter. Use only when the user asks to filter the report.',
-     inputSchema: {type: 'object', properties: {field: {type: 'string'}, values: {type: 'array', items: {type: 'string'}}}, required: ['field', 'values']},
-     execute(input){
-       const f = fieldOrThrow(input.field), vals = (Array.isArray(input.values) ? input.values : []).map(String);
-       if (vals.length) S.sel[f] = new Set(vals); else delete S.sel[f];
-       renderAll();
-       (msg.did ||= []).push(T().filt(vals.length ? `${f} = ${vals.join(', ')}` : `${f} cleared`));
-       return `Report now filtered: ${selText()}. Rows in view: ${globalRows().length}.`;
-     }},
-  ];
+function Q_years(){ const d = FIELDS.find(f => f.type === 'date')?.name; return d ? [...new Set(ROWS.map(r => r[`${d} (Year)`]).filter(Boolean))].sort() : []; }
+function samplePrompts(){
+  const m = MEAS_DEFAULT().f === RECORDS ? 'rows' : MEAS_DEFAULT().f, d = DIM_DEFAULT(), ys = Q_years(), dateF = FIELDS.find(f => f.type === 'date');
+  const en = [`What is the total ${m}?`], ar = [`ما إجمالي ${m}؟`];
+  if (d){ en.push(`Top 5 ${d} by ${m}`); ar.push(`أعلى 5 ${d} حسب ${m}`); }
+  if (dateF){ en.push(`How did ${m} change by month?`); ar.push(`${m} حسب الشهر`); }
+  if (ys.length > 1){ en.push(`Compare ${ys.at(-2)} and ${ys.at(-1)}`); ar.push(`قارن ${ys.at(-2)} و ${ys.at(-1)}`); }
+  if (d){ en.push(`Which ${d} has the lowest ${m}?`); ar.push(`أي ${d} لديه أقل ${m}؟`); }
+  en.push('Summarize this page'); ar.push('لخّص هذه الصفحة');
+  if (d){ en.push(`Show ${m} by ${d} as a chart`); ar.push(`اعرض ${m} حسب ${d} في رسم بياني`); }
+  return {en: en.slice(0, 7), ar: ar.slice(0, 7)};
 }
 
-/* --- light Markdown for answers (input is escaped first) --- */
+/* ---------- light Markdown for answers (input is escaped first) ---------- */
 function mdLite(src){
   const L = esc(src).split('\n'), out = [];
   const inl = t => t.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\s][^*]*?)\*(?!\*)/g, '$1<i>$2</i>').replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -3471,41 +3667,28 @@ function mdLite(src){
   return out.join('');
 }
 
-/* --- panel --- */
-function getSample(){
-  return CH.sampleP ||= (async () => {
-    if (!window.claude?.use) return null;
-    const s = await window.claude.use('sample').catch(() => null);
-    if (s){ const lim = await s.limits?.().catch(() => null); CH.toolsOK = !lim || !!lim.tools; }
-    return s;
-  })();
-}
-function openChat(){
-  hideTips();
-  const el = $('#chat'); el.hidden = false; renderChat(); closeDrawers();
-  setTimeout(() => $('#chatIn')?.focus(), 30);
-  getSample().then(s => { if (!s && !CH.off){ CH.off = 'unavailable'; renderChat(); } });
-}
-function closeChat(){ CH.ctl?.abort(); $('#chat').hidden = true; }
+
+/* ---------- panel ---------- */
+const chatCharts = [];
+function openChat(){ hideTips(); const el = $('#chat'); el.hidden = false; renderChat(); closeDrawers(); setTimeout(() => $('#chatIn')?.focus(), 30); }
+function closeChat(){ $('#chat').hidden = true; chatCharts.splice(0).forEach(c => c.dispose()); }
 function renderChat(){
   const el = $('#chat'); if (el.hidden) return;
   const draft = $('#chatIn')?.value || '';
-  const t = T(), chat = curChat(), sp = samplePrompts();
+  chatCharts.splice(0).forEach(c => c.dispose());
+  const t = T(), chat = curChat(), sp = ds() ? samplePrompts() : {en: [], ar: []};
   el.setAttribute('dir', CH.lang === 'ar' ? 'rtl' : 'ltr'); el.setAttribute('lang', CH.lang);
-  const sampleBtns = arr => arr.map(q => `<button type="button" data-q="${esc(q)}" dir="auto">${esc(q)}</button>`).join('');
-  const first = CH.lang === 'ar' ? ['ar', t.tryAr, 'en', t.tryEn] : ['en', t.tryEn, 'ar', t.tryAr];
-  el.innerHTML = `<div class="chat-h"><h3>${esc(t.title)}<small>${esc(t.sub(S.active))}</small></h3>
+  const btns = arr => arr.map(q => `<button type="button" data-q="${esc(q)}" dir="auto">${esc(q)}</button>`).join('');
+  const order = CH.lang === 'ar' ? [['ar', t.tryAr], ['en', t.tryEn]] : [['en', t.tryEn], ['ar', t.tryAr]];
+  el.innerHTML = `<div class="chat-h"><span class="sahil-av" aria-hidden="true">S</span><h3>${esc(t.title)}<small>${esc(t.sub(ds() ? S.active : ''))}</small></h3>
       <div class="lang" role="group" aria-label="Language"><button type="button" data-lang="en" class="${CH.lang === 'en' ? 'on' : ''}" lang="en">EN</button><button type="button" data-lang="ar" class="${CH.lang === 'ar' ? 'on' : ''}" lang="ar">عربي</button></div>
-      ${chat.msgs.length ? `<button class="btn ghost sm" type="button" data-c="clear" title="${esc(t.clear)}">${esc(t.clear)}</button>` : ''}
+      ${chat.msgs.length ? `<button class="btn ghost sm" type="button" data-c="clear">${esc(t.clear)}</button>` : ''}
       <button class="btn ghost sm" type="button" data-c="close" aria-label="${esc(t.close)}">✕</button></div>
     <div class="chat-b" id="chatB">${chat.msgs.length ? chat.msgs.map((m, i) => `<div class="msg ${m.role === 'user' ? 'user' : 'bot'}" data-i="${i}" dir="auto"></div>`).join('') :
-      `<p class="chat-intro">${esc(t.intro)}</p>${CH.off ? `<p class="err">${esc(t[CH.off])}</p>` : ''}
-       <div class="samples"><h5>${esc(first[1])}</h5>${sampleBtns(sp[first[0]])}<h5 style="margin-top:8px">${esc(first[3])}</h5>${sampleBtns(sp[first[2]])}</div>`}</div>
+      `<p class="chat-intro">${esc(ds() ? t.intro : t.nodata)}</p>${ds() ? `<div class="samples"><h5>${esc(order[0][1])}</h5>${btns(sp[order[0][0]])}<h5 style="margin-top:8px">${esc(order[1][1])}</h5>${btns(sp[order[1][0]])}</div>` : ''}`}</div>
     <form class="chat-f" id="chatF">
-      <textarea id="chatIn" rows="2" dir="auto" placeholder="${esc(t.ph)}" aria-label="${esc(t.ph)}" ${CH.off ? 'disabled' : ''}></textarea>
-      <div class="row"><label><input type="checkbox" id="chatDeep" ${CH.deep ? 'checked' : ''}> ${esc(t.deep)}</label>
-        <span style="display:flex;gap:6px;align-items:center"><span class="note">${esc(t.note)}</span>
-        ${CH.busy ? `<button class="btn" type="button" data-c="stop">${esc(t.stop)}</button>` : `<button class="btn primary" type="submit" ${CH.off ? 'disabled' : ''}>${esc(t.send)}</button>`}</span></div>
+      <textarea id="chatIn" rows="2" dir="auto" placeholder="${esc(t.ph)}" aria-label="${esc(t.ph)}"></textarea>
+      <div class="row"><span class="note">${esc(t.note)}</span><button class="btn primary" type="submit" ${CH.busy ? 'disabled' : ''}>${esc(t.send)}</button></div>
     </form>`;
   chat.msgs.forEach(m => renderChatMsg(m));
   if (draft) $('#chatIn').value = draft;
@@ -3515,53 +3698,53 @@ function renderChatMsg(m){
   const chat = curChat(), i = chat.msgs.indexOf(m);
   const el = $(`#chatB .msg[data-i="${i}"]`); if (!el) return;
   if (m.role === 'user'){ el.textContent = m.text; return; }
-  el.innerHTML = (m.text ? mdLite(m.text) : '') + (m.pending ? `<div class="st busy">${esc(m.status || T().thinking)}</div>` : '')
-    + (m.did?.length ? `<div class="did">${m.did.map(d => `<span dir="auto">✓ ${esc(d)}</span>`).join('')}</div>` : '')
-    + (m.error ? `<p class="err">${esc(m.error)}</p>` : '') + (m.note ? `<p class="hint" style="font-size:12px;margin:6px 0 0">${esc(m.note)}</p>` : '');
-  const b = $('#chatB'); if (b && b.scrollHeight - b.scrollTop - b.clientHeight < 160) b.scrollTop = b.scrollHeight;
+  el.innerHTML = (m.pending ? `<div class="st busy">${esc(T().thinking)}</div>` : mdLite(m.text || ''))
+    + (m.chart && !m.pending ? `<div class="mini-chart"></div><button class="btn sm" type="button" data-add="${i}" ${m.addedTo ? 'disabled' : ''}>${esc(m.addedTo ? T().added : T().addChart)}</button>` : '')
+    + (m.did?.length ? `<div class="did">${m.did.map(d => `<span dir="auto">✓ ${esc(d)}</span>`).join('')}</div>` : '');
+  const box = $('.mini-chart', el);
+  if (box){
+    try {
+      const v = newVisual(m.chart.type, {...m.chart});
+      const res = ({column: cartesian, bar: cartesian, line: cartesian, area: cartesian, donut: categorical, pie: categorical})[v.type](effective(v));
+      if (res?.opt){ res.opt.animation = false; const c = echarts.init(box, null, {renderer: 'canvas'}); c.setOption(res.opt); chatCharts.push(c); }
+      else box.remove();
+    } catch (e){ console.error(e); box.remove(); }
+  }
+  const b = $('#chatB'); if (b && b.scrollHeight - b.scrollTop - b.clientHeight < 200) b.scrollTop = b.scrollHeight;
+}
+function addChartFromChat(m){
+  if (!canEdit() || !m.chart) return;
+  const v = newVisual(m.chart.type, {...m.chart});
+  if (['line', 'column'].includes(v.type)) v.w = Math.max(v.w, 6);
+  page().visuals.push(v); S.selected = v.id; changed();
+  requestAnimationFrame(() => $(`.card[data-id="${v.id}"]`)?.scrollIntoView({block: 'nearest', behavior: 'smooth'}));
+  m.addedTo = true;
 }
 async function chatSend(q){
   q = String(q || '').trim(); if (!q || CH.busy) return;
   const chat = curChat();
   chat.msgs.push({role: 'user', text: q});
-  const a = {role: 'assistant', text: '', pending: true, status: T().thinking};
+  const a = {role: 'assistant', pending: true};
   chat.msgs.push(a);
   CH.busy = true; renderChat();
-  const sample = await getSample();
-  if (!sample){ a.pending = false; a.error = T().unavailable; CH.busy = false; CH.off = 'unavailable'; renderChat(); return; }
-  CH.ctl = new AbortController();
-  const turns = [{role: 'user', content: chatInstructions()}, ...chat.turns.slice(-12), {role: 'user', content: q}];
+  await sleep(220);
   try {
-    const opts = {signal: CH.ctl.signal, cache: false, modelTier: CH.deep ? 'default' : 'quick',
-      onText: ({text}) => { a.text = text; a.status = ''; renderChatMsg(a); }};
-    if (CH.toolsOK) opts.tools = chatTools(a);
-    const res = await sample(turns, opts);
-    a.text = res.text;
-    if (res.truncated) a.note = T().cut;
-    chat.turns.push({role: 'user', content: q}, {role: 'assistant', content: res.text});
-  } catch (e){
-    a.text = e?.text || '';
-    const c = e?.code;
-    if (c === 'not_granted' || c === 'sampling_disabled' || c === 'not_declared' || c === 'capability_disabled' || c === 'capability_removed'){ CH.off = 'denied'; a.error = T().denied; }
-    else if (c === 'tools_unavailable'){ CH.toolsOK = false; a.error = T().error; }
-    else if (c === 'rate_limited') a.error = T().limited;
-    else if (c === 'refused'){ a.text = ''; a.error = T().refused; }
-    else if (c !== 'cancelled') a.error = T().error;
-  } finally {
-    a.pending = false; a.status = ''; CH.busy = false; CH.ctl = null;
-    renderChat();
-  }
+    Object.assign(a, sahil(q));
+    if (a.chartNow && a.chart && canEdit()){ addChartFromChat(a); (a.did ||= []).push(AR_RE.test(q) ? 'تمت إضافة الرسم إلى الصفحة' : 'Added the chart to the page'); }
+  } catch (e){ console.error(e); a.text = T().error; }
+  a.pending = false; CH.busy = false;
+  renderChat();
 }
 $('#chat').addEventListener('click', e => {
   const q = e.target.closest('[data-q]')?.dataset.q; if (q) return chatSend(q);
   const lg = e.target.closest('[data-lang]')?.dataset.lang;
-  if (lg){ CH.lang = lg; try { localStorage.setItem('facet-chat-lang', lg); } catch {} return renderChat(); }
+  if (lg){ CH.lang = lg; try { localStorage.setItem('miyar-chat-lang', lg); } catch {} return renderChat(); }
+  const add = e.target.closest('[data-add]');
+  if (add){ const m = curChat().msgs[+add.dataset.add]; addChartFromChat(m); return renderChat(); }
   const c = e.target.closest('[data-c]')?.dataset.c;
   if (c === 'close') closeChat();
-  if (c === 'stop') CH.ctl?.abort();
-  if (c === 'clear'){ CH.ctl?.abort(); CHATS[S.reportId] = {msgs: [], turns: []}; renderChat(); }
+  if (c === 'clear'){ CHATS[S.reportId] = {msgs: [], ctx: {}}; renderChat(); }
 });
-$('#chat').addEventListener('change', e => { if (e.target.id === 'chatDeep') CH.deep = e.target.checked; });
 $('#chat').addEventListener('submit', e => { e.preventDefault(); const t = $('#chatIn'); const q = t.value; t.value = ''; chatSend(q); });
 $('#chat').addEventListener('keydown', e => { if (e.target.id === 'chatIn' && e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); $('#chatF').requestSubmit(); } });
 $('#chat').addEventListener('input', e => { if (e.target.id === 'chatIn'){ e.target.style.height = 'auto'; e.target.style.height = Math.min(140, e.target.scrollHeight) + 'px'; } });
