@@ -2668,6 +2668,14 @@ async function refreshDataset(name, btn){
 
 /* ============================== export ============================== */
 function openExport(){
+  if (!ds() && !S.pages.some(pg => pg.visuals.length)){
+    const dlg = modal(`<div class="dlg-h"><h3>Export report</h3><button class="btn ghost" data-x type="button">Close</button></div>
+      <div class="dlg-b"><p>There's nothing to export yet. Upload an Excel file first; once Miyar has built your dashboard you can export it as PDF or Excel.</p>
+      <div class="form-row"><button class="btn primary" id="xUp" type="button">Upload data</button></div></div>`, 'small');
+    dlg.querySelector('[data-x]').onclick = closeModal;
+    $('#xUp').onclick = () => openData('import');
+    return;
+  }
   const dlg = modal(`<div class="dlg-h"><h3>Export report</h3><button class="btn ghost" data-x type="button">Close</button></div>
     <div class="dlg-b">
       <div class="choices" role="radiogroup" aria-label="Format">
@@ -2790,7 +2798,7 @@ async function exportXLSX(idxs, includeRows){
   const sws = XLSX.utils.aoa_to_sheet(summary); sws['!cols'] = [{wch: 22}, {wch: 44}, {wch: 20}, {wch: 30}];
   XLSX.utils.book_append_sheet(wb, sws, sheetName('Summary'));
   for (const [nm, ws] of sheets) XLSX.utils.book_append_sheet(wb, ws, nm);
-  if (includeRows){
+  if (includeRows && ds()){
     const cols = FIELDS.filter(f => f.src === 'col' || (f.src === 'calc' && f.calcKind === 'row'));
     const rows = globalRows().slice(0, 1000000).map(r => cols.map(c => r[c.name] ?? ''));
     XLSX.utils.book_append_sheet(wb, sheetFrom(cols.map(c => c.name), rows, cols.map(c => c.type === 'number' ? fmtKind({f: c.name, agg: 'sum'}) : null)), sheetName('Data'));
