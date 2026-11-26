@@ -138,6 +138,41 @@ button{cursor:pointer}
 .drop-big b{display:block;font-size:16px;margin:10px 0 4px;color:var(--ink)}
 .drop-big span{color:var(--ink3);font-size:12.5px}
 .drop-big svg{width:34px;height:34px;color:var(--accent)}
+.welcome-in.wide{width:min(780px,100%)}
+.steps{display:flex;gap:8px;justify-content:center;align-items:center;list-style:none;padding:0;margin:0 0 20px;flex-wrap:wrap}
+.steps li{display:flex;align-items:center;gap:6px;color:var(--ink3);font-size:12.5px}
+.steps li span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line2);font-size:11px;font-weight:600;background:var(--panel)}
+.steps li.on{color:var(--ink);font-weight:600}
+.steps li.on span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.steps li.done span{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.steps li+li::before{content:"";width:28px;height:1.5px;background:var(--line2);margin-right:2px}
+.start-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;text-align:left}
+.start-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;cursor:pointer;border:1.5px solid var(--line2);border-radius:14px;padding:20px;background:var(--panel);font:inherit;color:inherit;text-align:left;min-width:0;transition:border-color .15s,background .15s,transform .15s}
+.start-card:hover,.start-card.over,.start-card:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
+.start-card:hover{transform:translateY(-1px)}
+.start-card .ic{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);margin-bottom:6px}
+.start-card .ic svg{width:22px;height:22px}
+.start-card b{font-size:16px;font-family:var(--f-head)}
+.start-card > span{color:var(--ink2);line-height:1.5;font-size:13px}
+.start-card .fmt{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.start-card .fmt i{font-style:normal;font-size:11px;font-weight:600;letter-spacing:.03em;padding:2px 7px;border-radius:5px;background:var(--raise);border:1px solid var(--line);color:var(--ink2)}
+.start-card .cta{margin-top:10px;color:var(--accent);font-weight:600;font-size:13px}
+.welcome .conn-grid{text-align:left}
+.welcome .conn-g{text-align:left}
+.sheet-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;text-align:left}
+.sheet-card{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line2);border-radius:11px;padding:12px;background:var(--panel);cursor:pointer;min-width:0}
+.sheet-card:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.sheet-card input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px;flex:none}
+.sheet-card div{min-width:0}
+.sheet-card b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-card small{display:block;color:var(--ink2);font-size:12px;margin-top:1px}
+.sheet-card .cols{display:block;color:var(--ink3);font-size:11.5px;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-card.off{opacity:.5;cursor:default}
+.sheet-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:16px}
+@media (max-width:640px){.start-grid{grid-template-columns:minmax(0,1fr)}.steps{gap:6px}.steps li+li::before{width:14px}.steps li:not(.on){font-size:0;gap:0}}
+body.nodata #fieldsPane,body.nodata #buildPane,body.nodata .selbar,body.nodata .mnav [data-m="fields"],body.nodata .mnav [data-m="build"]{display:none!important}
+body.nodata .work{grid-template-columns:minmax(0,1fr)!important}
+@media (max-width:640px){body.nodata .mnav{grid-template-columns:repeat(3,1fr)}}
 .welcome .alt{margin-top:14px;color:var(--ink3);font-size:12.5px}
 .welcome .alt button{border:0;background:none;color:var(--accent);padding:2px 4px;font-size:12.5px;text-decoration:underline;text-underline-offset:2px}
 .welcome .sheets{display:flex;flex-direction:column;gap:6px;margin-top:12px;text-align:start}
@@ -1664,36 +1699,73 @@ function renderCanvas(){
   }
 }
 const ACCEPT = '.xlsx,.xls,.xlsm,.xlsb,.ods,.csv,.tsv,.txt,.json,.pdf,.html,.htm';
+/* Guided start: 1 choose data (upload or connect) → 2 pick sheets → 3 dashboard built automatically. */
+const W = {step: 'start', name: '', sheets: null, info: null, sel: new Set()};
+const LOGO = '<svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="12" width="5" height="10" rx="1.5" fill="var(--s1)"/><rect x="9.5" y="6" width="5" height="16" rx="1.5" fill="var(--accent)"/><rect x="17" y="2" width="5" height="20" rx="1.5" fill="var(--s3)"/></svg>';
 function welcomeHtml(){
-  if (!canEdit()) return `<div class="welcome"><div class="welcome-in"><h2>No reports yet</h2><p>Nobody has shared a report in ${esc(SRV.cfg?.org || 'your organisation')} yet. Ask an editor to upload data, or ask an administrator for editor access.</p></div></div>`;
-  return `<div class="welcome"><div class="welcome-in">
-    <svg width="44" height="44" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="12" width="5" height="10" rx="1.5" fill="var(--s1)"/><rect x="9.5" y="6" width="5" height="16" rx="1.5" fill="var(--accent)"/><rect x="17" y="2" width="5" height="20" rx="1.5" fill="var(--s3)"/></svg>
-    <h2>Start with your data</h2>
-    <p>Upload an Excel sheet and Miyar builds a dashboard for you: key figures, trends, breakdowns and a detail table. You can change everything afterwards.</p>
-    <label class="drop-big" id="wDrop" for="wFile">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V4m-4.5 4.5L12 4l4.5 4.5M4 15v4.5h16V15"/></svg>
-      <b>Choose an Excel file</b><span>or drop it here · Excel, CSV, JSON and PDF tables</span>
-    </label>
+  if (!canEdit()) return `<div class="welcome"><div class="welcome-in"><h2>No reports yet</h2><p>Nobody has shared a report in ${esc(SRV.cfg?.org || 'your organisation')} yet. Ask an editor to add data, or ask an administrator for editor access.</p></div></div>`;
+  const steps = [['start', 'Choose data'], ['sheets', 'Pick sheets'], ['done', 'Dashboard']];
+  const curStep = W.step === 'connect' ? 'start' : W.step, at = steps.findIndex(x => x[0] === curStep);
+  const bar = `<ol class="steps" aria-label="Steps">${steps.map(([key, label], n) => `<li class="${n === at ? 'on' : n < at ? 'done' : ''}" ${n === at ? 'aria-current="step"' : ''}><span>${n < at ? '✓' : n + 1}</span>${label}</li>`).join('')}</ol>`;
+  let head, body;
+  if (W.step === 'connect'){
+    head = ['Connect to a data source', 'Pick where your data lives. Miyar reads it through Miyar Gateway, which keeps passwords on your side and runs read-only queries.'];
+    const groups = [...new Set(CONNECTORS.map(x => x.g))];
+    body = groups.map(g => `<div class="conn-g">${esc(g)}</div><div class="conn-grid">${CONNECTORS.filter(x => x.g === g).map(x =>
+      `<button class="conn" type="button" data-c="${x.id}"><span class="mono ${x.cls}">${esc(x.m)}</span><span style="min-width:0"><b>${esc(x.name)}</b><small>${x.mode === 'web' ? 'No gateway needed' : 'Through the gateway'}</small></span></button>`).join('')}</div>`).join('')
+      + (IN_CLAUDE ? '<p class="hint" style="font-size:12px">Live connections work in the self-hosted version of Miyar. Here you can see how each one is set up.</p>' : '')
+      + `<div class="sheet-actions"><button class="btn" type="button" data-w="back">← Back</button></div>`;
+  } else if (W.step === 'sheets'){
+    const okCount = W.info.filter(x => !x.err).length;
+    head = [`“${W.name}” has ${W.info.length} sheets`, 'Tick the sheets you want to analyse. Each one becomes a page with its own dashboard.'];
+    body = `<div class="sheet-cards">${W.info.map((x, n) => `<label class="sheet-card ${x.err ? 'off' : ''}"><input type="checkbox" data-si="${n}" ${W.sel.has(n) ? 'checked' : ''} ${x.err ? 'disabled' : ''}>
+        <div><b title="${esc(x.name)}">${esc(x.name)}</b><small>${x.err ? 'No table found in this sheet' : `${x.rows.toLocaleString()} rows · ${x.cols.length} columns`}</small>${x.err ? '' : `<span class="cols" title="${esc(x.cols.join(', '))}">${esc(x.cols.slice(0, 6).join(' · '))}</span>`}</div></label>`).join('')}</div>
+      <div class="sheet-actions"><button class="btn ghost" type="button" data-w="back">← Choose another file</button>
+        ${okCount > 1 ? `<button class="btn" type="button" data-w="all">${W.sel.size === okCount ? 'Clear all' : 'Select all'}</button>` : ''}
+        <button class="btn primary" type="button" id="wBuild" ${W.sel.size ? '' : 'disabled'}>Build dashboard${W.sel.size > 1 ? ` · ${W.sel.size} pages` : ''}</button></div>`;
+  } else {
+    head = ['Welcome to Miyar', 'Bring in your data and Miyar builds the dashboard for you: key figures, trends, breakdowns and a detail table. You can change everything afterwards.'];
+    const chips = ['SAP', 'Oracle', 'Databricks', 'SQL Server', 'Snowflake', 'BigQuery'];
+    body = `<div class="start-grid">
+      <label class="start-card" id="wDrop" for="wFile" tabindex="0">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 15V4m-4.5 4.5L12 4l4.5 4.5M4 15v4.5h16V15"/></svg></span>
+        <b>Upload a file</b><span>Excel workbooks, CSV, JSON or tables in a PDF. Drop it here or click to choose.</span>
+        <span class="fmt"><i>XLSX</i><i>XLS</i><i>CSV</i><i>JSON</i><i>PDF</i></span><span class="cta">Choose a file →</span></label>
+      <button class="start-card" type="button" data-w="connect">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg></span>
+        <b>Connect to a data source</b><span>SAP, Oracle, Databricks, SQL Server, Snowflake, BigQuery, PostgreSQL and more.</span>
+        <span class="fmt">${chips.map(c => `<i>${c}</i>`).join('')}<i>+ more</i></span><span class="cta">Pick a source →</span></button>
+    </div>
     <input type="file" id="wFile" accept="${ACCEPT}" hidden>
-    <div id="wMsg" aria-live="polite"></div>
-    <div class="alt">Other ways in: <button type="button" data-w="paste">paste data</button>·<button type="button" data-w="sources">connect a database</button>·<button type="button" data-w="sample">try sample data</button></div>
-    <p class="privacy">${SRV.on ? `Data you upload is saved to ${esc(SRV.cfg.org)}'s Miyar server and shared with your colleagues.` : 'Your file is read in this browser and is not uploaded anywhere.'}</p>
-  </div></div>`;
+    <div class="alt">Or <button type="button" data-w="paste">paste data</button>·<button type="button" data-w="sample">explore sample data</button></div>`;
+  }
+  return `<div class="welcome"><div class="welcome-in wide">${LOGO}<h2>${esc(head[0])}</h2><p>${esc(head[1])}</p>${bar}${body}<div id="wMsg" aria-live="polite"></div>
+    <p class="privacy">${SRV.on ? `Data you add is saved to ${esc(SRV.cfg.org)}'s Miyar server and shared with your colleagues.` : 'Files are read in this browser and are not uploaded anywhere.'}</p></div></div>`;
 }
 function bindWelcome(){
-  const drop = $('#wDrop'), input = $('#wFile'); if (!drop) return;
-  input.onchange = () => input.files[0] && quickImport(input.files[0]);
-  drop.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); drop.classList.add('over'); });
-  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
-  drop.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) quickImport(f); });
-  $$('.welcome [data-w]').forEach(b => b.onclick = () => {
+  const root = $('.welcome'); if (!root) return;
+  const drop = $('#wDrop'), input = $('#wFile');
+  if (drop){
+    input.onchange = () => input.files[0] && quickImport(input.files[0]);
+    drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); input.click(); } });
+    drop.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) quickImport(f); });
+  }
+  $$('[data-w]', root).forEach(b => b.onclick = e => {
+    e.preventDefault();
     const k = b.dataset.w;
+    if (k === 'connect'){ W.step = 'connect'; renderCanvas(); }
+    if (k === 'back'){ W.step = 'start'; W.sheets = null; renderCanvas(); }
+    if (k === 'all'){ const ok = W.info.map((x, n) => x.err ? -1 : n).filter(n => n >= 0); W.sel = W.sel.size === ok.length ? new Set() : new Set(ok); renderCanvas(); }
     if (k === 'paste'){ openData('import'); setTimeout(() => { $('#dlgBody details')?.setAttribute('open', ''); $('#pText')?.focus(); }, 0); }
-    if (k === 'sources') openData('sources');
     if (k === 'sample'){ const r = curReport(); if (r) r.name = 'Retail sample'; resetToSample(); }
   });
+  $$('[data-c]', root).forEach(b => b.onclick = () => { SRC.want = b.dataset.c; openData('sources'); });
+  $$('[data-si]', root).forEach(cb => cb.onchange = () => { const n = +cb.dataset.si; cb.checked ? W.sel.add(n) : W.sel.delete(n); renderCanvas(); });
+  $('#wBuild')?.addEventListener('click', buildSelectedSheets);
 }
-/* Upload a file and build the dashboard straight away (no preview step). Workbooks with several sheets ask which one. */
+/* Step 1 → 2: read the file. A single table is built straight away; a workbook shows its sheets to pick from. */
 async function quickImport(file){
   const msg = $('#wMsg');
   const say = (html, cls = '') => { if (msg){ msg.className = cls; msg.innerHTML = html; } };
@@ -1701,16 +1773,31 @@ async function quickImport(file){
   try {
     const sheets = await readAnyFile(file);
     const base = file.name.replace(/\.[^.]+$/, '');
-    if (sheets.length > 1) rememberBook(base, sheets);
-    const go = i => {
-      if (sheets.length > 1) return openBookSheet(i);
-      const t = sheets[i].get();
-      buildFromTable(base, t.names, t.records);
-    };
-    if (sheets.length === 1) return go(0);
-    say(`<div class="sheets"><p style="margin:10px 0 2px;color:var(--ink2)">This workbook has ${sheets.length} sheets. Which one should Miyar use?</p>${sheets.map((sh, i) => `<button type="button" data-sh="${i}"><b>${esc(sh.name)}</b></button>`).join('')}</div>`);
-    $$('[data-sh]', msg).forEach(b => b.onclick = () => { try { go(+b.dataset.sh); } catch (e){ say(`<p class="err" style="margin-top:12px">${esc(e.message)}</p>`); } });
+    if (sheets.length === 1){ const t = sheets[0].get(); buildFromTable(base, t.names, t.records); return; }
+    rememberBook(base, sheets);
+    W.name = base; W.sheets = sheets;
+    W.info = sheets.map(sh => { try { const t = sh.get(); return {name: sh.name, rows: t.records.length, cols: t.names}; } catch { return {name: sh.name, err: true}; } });
+    const first = W.info.findIndex(x => !x.err);
+    W.sel = new Set(first >= 0 ? [first] : []);
+    W.step = 'sheets'; renderCanvas();
   } catch (e){ console.error(e); say(`<p class="err" style="margin-top:12px">Could not read that file: ${esc(e.message || e)}</p>`); }
+}
+/* Step 2 → 3: every ticked sheet becomes a page with its own dashboard. */
+async function buildSelectedSheets(){
+  const picks = [...W.sel].sort((a, b) => a - b);
+  const btn = $('#wBuild'); if (btn){ btn.disabled = true; btn.textContent = 'Building…'; }
+  await frame();
+  let first = null;
+  for (const n of picks){
+    const sh = W.sheets[n], t = sh.get();
+    buildFromTable(`${W.name} – ${sh.name}`, t.names, t.records, null, {page: sh.name, report: W.name});
+    BOOK?.opened.add(n);
+    if (first === null) first = S.pageIdx;
+  }
+  W.step = 'start'; W.sheets = null;
+  S.pageIdx = first ?? 0; S.selected = null; renderAll();
+  const left = BOOK ? BOOK.sheets.length - BOOK.opened.size : 0;
+  toast(`Built ${picks.length} page${picks.length === 1 ? '' : 's'} from “${W.name}”.${left ? ` ${left} more sheet${left === 1 ? '' : 's'} can be added from the report menu.` : ''}`);
 }
 /* The last workbook with several sheets stays available, so its other sheets can be added as pages without uploading again. */
 let BOOK = null;   // {base, sheets: [{name, get}], opened: Set of sheet indexes}
@@ -1869,6 +1956,7 @@ async function ensurePageData(i){
 }
 function renderAll(){
   syncPageData();
+  document.body.classList.toggle('nodata', !ds() && !S.pages.some(pg => pg.visuals.length));
   renderReportBtn(); renderTabs();
   if (!$('#chat').hidden && !CH.busy) renderChat(); renderSelbar(); renderFields(); renderCanvas(); renderBuild(); save();
 }
@@ -2599,7 +2687,7 @@ async function connectGateway(){
 }
 function drawGwState(){ const el = $('#gwState'); if (el){ el.className = 'state ' + (SRC.state === 'ok' ? 'ok' : SRC.state === 'bad' ? 'bad' : ''); el.textContent = SRC.msg || 'Not connected'; } }
 function renderSources(body){
-  SRC.sel = null;
+  SRC.sel = SRC.want || null; SRC.want = null;
   body.innerHTML = `<p>Connect live data from SAP, Oracle, Databricks and other databases or cloud platforms. Miyar reaches them through <b>Miyar Gateway</b>, a small open-source service you run next to your data, on a server, in Docker or in the cloud. The gateway keeps the passwords and runs read-only queries; the browser never sees credentials.</p>
     ${IN_CLAUDE ? `<p class="err">Live connections work only in the self-hosted version of Miyar (for example on GitHub Pages or your own server). Inside Claude, pages cannot reach other servers. Files still work from <b>Import data</b>.</p>` : ''}
     ${SRV.on ? `<div class="gw"><h4>Gateway</h4><span id="gwState" class="state"></span><p class="hint" style="margin:8px 0 0;font-size:12px">${SRV.cfg.gateway ? 'Connected through the Miyar server. Your administrator sets up the data connections on the gateway.' : 'No gateway is set up on this Miyar server yet. An administrator can add one with GATEWAY_URL and GATEWAY_KEY.'}</p></div>` : `<div class="gw"><h4>Gateway</h4>
