@@ -56,7 +56,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:13p
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-#app{height:100%;display:grid;grid-template-rows:auto auto 1fr;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;gap:8px}
+#app{height:100%;display:flex;flex-direction:column;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;gap:8px}
 
 /* top bar */
 .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0}
@@ -92,7 +92,7 @@ button{cursor:pointer}
 .selbar .rowcount{margin-left:auto;color:var(--ink2);font-family:var(--f-data);font-size:12px}
 
 /* workbench */
-.work{display:grid;grid-template-columns:220px minmax(0,1fr) 280px;gap:8px;min-height:0}
+.work{display:grid;grid-template-columns:220px minmax(0,1fr) 280px;gap:8px;min-height:0;flex:1 1 auto}
 .pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .pane-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);font-family:var(--f-head);font-weight:600;font-size:13px}
 .pane-b{overflow:auto;padding:10px 12px;flex:1;min-height:0}
@@ -334,6 +334,28 @@ pre.snip{font-family:var(--f-data);font-size:12px;background:var(--raise);border
 .chat-f .row{display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
 .chat-f label{display:flex;gap:6px;align-items:center;color:var(--ink2);font-size:12px}
 .chat-f .note{color:var(--ink3);font-size:11px}
+/* highlights ticker */
+.ticker{display:flex;align-items:stretch;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;min-height:34px;font-size:12.5px;flex:none}
+.tk-badge{flex:none;display:flex;align-items:center;gap:7px;padding:0 12px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.tk-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;animation:tkpulse 1.8s ease-in-out infinite}
+.tk-view{flex:1;overflow:hidden;min-width:0;display:flex;align-items:center;-webkit-mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent)}
+.tk-track{display:flex;width:max-content;animation:tkscroll 40s linear infinite}
+.ticker:hover .tk-track,.ticker:focus-within .tk-track{animation-play-state:paused}
+.tk-seg{display:flex;flex:none}
+.tk-item{display:inline-flex;align-items:baseline;gap:6px;padding:0 18px;white-space:nowrap;border:0;border-right:1px solid var(--line);background:none;font:inherit;color:var(--ink)}
+.tk-item .l{color:var(--ink2)}
+.tk-item b{font-family:var(--f-data);font-weight:500;font-variant-numeric:tabular-nums}
+.tk-item .up{color:var(--good);font-weight:600}
+.tk-item .down{color:var(--bad);font-weight:600}
+.tk-item .n{color:var(--ink3)}
+button.tk-item{cursor:pointer}
+button.tk-item:hover{background:var(--raise)}
+.tk-x{flex:none;border:0;border-left:1px solid var(--line);background:none;color:var(--ink3);width:32px;font-size:15px;padding:0}
+.tk-x:hover{color:var(--ink);background:var(--raise)}
+@keyframes tkscroll{to{transform:translateX(-50%)}}
+@keyframes tkpulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.tk-view{overflow-x:auto;-webkit-mask-image:none;mask-image:none}}
+body.nodata .ticker{display:none!important}
 /* drill-down */
 .drill{display:flex;gap:2px}
 .drill .ib{opacity:1!important}
@@ -484,6 +506,7 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
       <button class="btn only-narrow" id="btnBuild" type="button">Build</button>
     </div>
   </header>
+  <div class="ticker" id="ticker" hidden aria-label="Page highlights"></div>
   <div class="selbar" id="selbar" aria-live="polite"></div>
   <main class="work">
     <aside class="pane drawer" id="fieldsPane" aria-label="Fields">
@@ -1956,11 +1979,112 @@ async function ensurePageData(i){
 }
 function renderAll(){
   syncPageData();
+  renderTicker();
   document.body.classList.toggle('nodata', !ds() && !S.pages.some(pg => pg.visuals.length));
   renderReportBtn(); renderTabs();
   if (!$('#chat').hidden && !CH.busy) renderChat(); renderSelbar(); renderFields(); renderCanvas(); renderBuild(); save();
 }
-function changed(){ renderCanvas(); renderBuild(); renderSelbar(); save(); }
+function changed(){ renderCanvas(); renderBuild(); renderSelbar(); renderTicker(); save(); }
+
+/* ============================== highlights ticker ==============================
+   A scrolling strip of the page's headline numbers, best and worst performers, best month and active filters. */
+const TICK = {on: (() => { try { return localStorage.getItem('miyar-ticker') !== 'off'; } catch { return true; } })(), html: ''};
+function tickerItems(){
+  if (!ds() || !ROWS.length) return [];
+  const rows = globalRows(), items = [], p = page();
+  if (!rows.length) return [{label: 'No rows match the current filters', value: ''}];
+  // headline figures: the page's KPI cards, else its multi-row card, else the first numeric column
+  let heads = [];
+  for (const v of p.visuals){
+    if (v.type === 'kpi' && v.measures[0] && !missingFields(v).length) heads.push({m: v.measures[0], label: v.title || measureLabel(v.measures[0]), trend: v.dims[0]});
+    if (v.type === 'multicard' && !missingFields(v).length) v.measures.forEach(m => heads.push({m, label: measureLabel(m)}));
+  }
+  if (!heads.length){
+    const num = FIELDS.find(f => f.role === 'measure' && f.src === 'col');
+    heads.push(num ? {m: {f: num.name, agg: 'sum'}, label: `Total ${num.name}`} : {m: {f: RECORDS, agg: 'count'}, label: 'Rows'});
+  }
+  const dateCol = FIELDS.find(f => f.type === 'date');
+  heads = heads.filter((h, i) => i === 0 || h.m.f !== RECORDS);   // row counts are shown once, at the end
+  for (const h of heads.slice(0, 4)){
+    const val = measureVal(h.m, rows);
+    const it = {label: h.label, value: fmtVal(val, h.m, Math.abs(val ?? 0) >= 1e5)};
+    const tdim = h.trend && FMAP.has(h.trend) ? h.trend : null;
+    if (tdim){
+      const g = groupRows(rows, r => keyOf(r[tdim]));
+      const ks = [...g.keys()].filter(k => k !== '(Blank)').sort(labelCmp);
+      if (ks.length >= 2){
+        const last = measureVal(h.m, g.get(ks.at(-1))), prev = measureVal(h.m, g.get(ks.at(-2)));
+        if (last != null && prev){
+          const pct = fmtKind(h.m) === 'percent';
+          const ch = pct ? last - prev : (last - prev) / Math.abs(prev);
+          it.delta = {up: ch >= 0, text: `${(Math.abs(ch) * 100).toFixed(1)}${pct ? ' pts' : '%'}`, note: `${ks.at(-1)} vs prior`};
+        }
+      }
+    }
+    items.push(it);
+  }
+  // best and worst for the page's main breakdowns
+  const main = heads[0].m;
+  const additive = main.f === RECORDS || (['sum', 'count', 'dcount'].includes(main.agg) && !isCalcMeasure(main.f));
+  const dims = [];
+  for (const v of p.visuals){
+    if (!['bar', 'column', 'stacked', 'stackedbar', 'donut', 'pie', 'treemap', 'funnel', 'waterfall', 'slicer', 'matrix'].includes(v.type) || missingFields(v).length) continue;
+    const d = effective(v).dims?.[0];
+    if (d && FMAP.get(d)?.src !== 'part' && FMAP.get(d)?.type !== 'date' && !dims.includes(d)) dims.push(d);
+  }
+  if (!dims.length){ const d = FIELDS.find(f => f.role === 'dim' && f.src === 'col' && f.type === 'string'); if (d) dims.push(d.name); }
+  const total = measureVal(main, rows);
+  for (const d of dims.slice(0, 2)){
+    const g = groupRows(rows, r => keyOf(r[d]));
+    if (g.size < 2 || g.size > 500) continue;
+    const ranked = [...g].map(([k, rs]) => [k, measureVal(main, rs)]).filter(x => x[1] != null).sort((a, b) => b[1] - a[1]);
+    if (ranked.length < 2) continue;
+    const share = v => additive && total ? ` (${(v / total * 100).toFixed(0)}%)` : '';
+    const [tk, tv] = ranked[0], [bk, bv] = ranked.at(-1);
+    items.push({label: `Top ${shortName(d)}`, value: tk, sub: fmtVal(tv, main, true) + share(tv), sel: [d, tk]});
+    if (ranked.length > 2) items.push({label: `Lowest ${shortName(d)}`, value: bk, sub: fmtVal(bv, main, true) + share(bv), sel: [d, bk]});
+  }
+  // best month for the headline figure
+  if (dateCol && FMAP.has(`${dateCol.name} (Month)`)){
+    const mf = `${dateCol.name} (Month)`, g = groupRows(rows, r => keyOf(r[mf]));
+    const ranked = [...g].filter(([k]) => k !== '(Blank)').map(([k, rs]) => [k, measureVal(main, rs)]).filter(x => x[1] != null).sort((a, b) => b[1] - a[1]);
+    if (ranked.length > 1) items.push({label: 'Best month', value: ranked[0][0], sub: fmtVal(ranked[0][1], main, true)});
+  }
+  const sel = Object.entries(S.sel).filter(([, x]) => x.size);
+  if (sel.length) items.push({label: 'Filtered by', value: sel.map(([f, x]) => `${shortName(f)}: ${[...x].slice(0, 2).join(', ')}${x.size > 2 ? '…' : ''}`).join(' · ')});
+  items.push({label: 'Rows in view', value: rows.length.toLocaleString(), sub: rows.length < ROWS.length ? `of ${ROWS.length.toLocaleString()}` : ''});
+  return items;
+}
+let tickRaf = 0;
+function renderTicker(){
+  cancelAnimationFrame(tickRaf);
+  tickRaf = requestAnimationFrame(() => {
+    const el = $('#ticker'); if (!el) return;
+    let items = [];
+    try { items = TICK.on ? tickerItems() : []; } catch (e){ console.error(e); }
+    el.hidden = !items.length;
+    if (!items.length){ TICK.html = ''; return; }
+    const one = items.map(it => {
+      const inner = `<span class="l">${esc(it.label)}</span>${it.value !== '' ? ` <b>${esc(it.value)}</b>` : ''}${it.sub ? ` <span class="n">${esc(it.sub)}</span>` : ''}${it.delta ? ` <span class="${it.delta.up ? 'up' : 'down'}">${it.delta.up ? '▲' : '▼'} ${esc(it.delta.text)}</span> <span class="n">${esc(it.delta.note)}</span>` : ''}`;
+      return it.sel ? `<button class="tk-item" type="button" data-tf="${esc(it.sel[0])}" data-tv="${esc(it.sel[1])}" title="Filter the report to ${esc(it.sel[1])}">${inner}</button>` : `<span class="tk-item">${inner}</span>`;
+    }).join('');
+    if (one === TICK.html) return;
+    TICK.html = one;
+    el.innerHTML = `<span class="tk-badge">Highlights</span><div class="tk-view"><div class="tk-track"><div class="tk-seg">${one}</div><div class="tk-seg" aria-hidden="true" inert>${one}</div></div></div><button class="tk-x" type="button" aria-label="Hide highlights" title="Hide highlights">×</button>`;
+    const tr = $('.tk-track', el);
+    tr.style.animationDuration = Math.max(18, tr.scrollWidth / 2 / 50) + 's';   // about 50 px per second
+  });
+}
+$('#ticker').addEventListener('click', e => {
+  if (e.target.closest('.tk-x')){ setTicker(false); return; }
+  const b = e.target.closest('[data-tf]'); if (b) toggleSel(b.dataset.tf, b.dataset.tv, false);
+});
+function setTicker(on){
+  TICK.on = on; TICK.html = '';
+  try { localStorage.setItem('miyar-ticker', on ? 'on' : 'off'); } catch {}
+  renderTicker();
+  if (!on) toast('Highlights hidden. Turn them back on from the report menu.', 'Undo', () => setTicker(true));
+}
 
 /* ============================== visual ops ============================== */
 function newVisual(type, extra = {}){
@@ -2213,12 +2337,13 @@ function openSheet(){
     <h4>Edit</h4><div class="g">${it('undo', 'Undo', 'undo', HIST.i <= 0 ? 'disabled' : '')}${it('redo', 'Redo', 'redo', HIST.i >= HIST.stack.length - 1 ? 'disabled' : '')}${it('reset', sheetResetArmed ? 'Tap again to reset' : 'Reset report', 'reset', (canReset ? '' : 'disabled') + (sheetResetArmed ? ' class="it warn"' : ''))}</div>
     <h4>Data</h4><div class="g">${it('data', 'View data', 'data')}${it('import', 'Import file', 'import')}${it('auto', 'Auto-build page', 'auto')}</div>
     ${SRV.on ? `<h4>Account · ${esc(SRV.me.name || SRV.me.email || '')}</h4><div class="g">${SRV.me.role === 'admin' ? it('users', 'Users & roles', 'user') + it('audit', 'Activity log', 'file') : ''}${it('signout', 'Sign out', 'logout')}</div>` : ''}
-    <h4>Report</h4><div class="g">${it('reports', 'Switch report', 'reports')}${it('rename', 'Rename page', 'rename')}${it('addpage', 'Add page', 'page')}${it('export', 'Export PDF / Excel', 'export')}${it('file', 'Report file', 'file')}${it('theme', 'Theme: ' + {auto: 'Auto', light: 'Light', dark: 'Dark'}[themePref], 'theme')}</div></div>`;
+    <h4>Report</h4><div class="g">${it('reports', 'Switch report', 'reports')}${it('rename', 'Rename page', 'rename')}${it('addpage', 'Add page', 'page')}${it('export', 'Export PDF / Excel', 'export')}${it('file', 'Report file', 'file')}${it('ticker', TICK.on ? 'Hide highlights' : 'Show highlights', 'reports')}${it('theme', 'Theme: ' + {auto: 'Auto', light: 'Light', dark: 'Dark'}[themePref], 'theme')}</div></div>`;
 }
 function closeSheet(){ $('#sheetRoot').innerHTML = ''; sheetResetArmed = false; }
 $('#sheetRoot').addEventListener('click', e => {
   const k = e.target.closest('[data-s]')?.dataset.s; if (!k) return;
   if (k === 'theme'){ $('#btnTheme').click(); return openSheet(); }
+  if (k === 'ticker'){ setTicker(!TICK.on); return openSheet(); }
   if (k === 'undo'){ undo(); return openSheet(); }
   if (k === 'redo'){ redo(); return openSheet(); }
   if (k === 'reset'){
@@ -3486,6 +3611,7 @@ function openReportsMenu(){
     <hr><button type="button" role="menuitem" data-r="import">Import a file into a new report…</button>
     <button type="button" role="menuitem" data-r="new">New blank report</button>
     <button type="button" role="menuitem" data-r="rename">Rename this report…</button>
+    <button type="button" role="menuitem" data-r="ticker">${TICK.on ? 'Hide' : 'Show'} the highlights ticker</button>
     ${REPORTS.length > 1 ? `<button type="button" role="menuitem" class="danger" data-r="close">Close this report</button>` : ''}`;
   document.body.append(m);
   m.style.left = clamp(b.left, 8, innerWidth - m.offsetWidth - 8) + 'px'; m.style.top = (b.bottom + 6) + 'px';
@@ -3499,6 +3625,7 @@ function openReportsMenu(){
     if (a === 'new'){ newReport('Untitled report', S.active, [{id: uid(), name: 'Page 1', visuals: []}]); toast('Opened a new blank report. Your other reports are in this menu.'); }
     if (a === 'close') closeReport(S.reportId);
     if (a === 'rename') renameReport();
+    if (a === 'ticker') setTicker(!TICK.on);
   });
   m.querySelector('button')?.focus();
 }
