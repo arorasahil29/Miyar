@@ -1656,7 +1656,11 @@ function renderCanvas(){
   }
   if (!p.visuals.length && !ds()){ cv.insertAdjacentHTML('beforeend', welcomeHtml()); bindWelcome(); return; }
   if (!p.visuals.length){
-    cv.insertAdjacentHTML('beforeend', `<div class="empty-canvas"><div><p style="font-family:var(--f-head);font-size:16px;color:var(--ink);margin:0 0 6px">This page is empty</p><p class="hint" style="margin:0">Drag a field here to start a visual, click <b>Visual</b> to add one, or use <b>Auto-build</b> for a starter layout.</p></div></div>`);
+    const left = BOOK ? BOOK.sheets.map((sh, i) => [sh, i]).filter(([sh]) => !S.pages.some(pg => pg.ds === `${BOOK.base} – ${sh.name}`)) : [];
+    cv.insertAdjacentHTML('beforeend', `<div class="empty-canvas"><div><p style="font-family:var(--f-head);font-size:16px;color:var(--ink);margin:0 0 6px">This page is empty</p>
+      <p class="hint" style="margin:0 0 12px">Drag a field here to start a visual, click <b>Visual</b> to add one, or bring in data for this page.</p>
+      ${canEdit() ? `<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${left.map(([sh, i]) => `<button class="btn sm" type="button" data-fill="${i}">Use sheet “${esc(sh.name)}”</button>`).join('')}<button class="btn sm primary" type="button" data-fill="import">Import data onto this page</button></div>` : ''}</div></div>`);
+    $$('[data-fill]', cv).forEach(b => b.onclick = e => { e.stopPropagation(); const k = b.dataset.fill; if (k === 'import') openData('import'); else openBookSheet(+k); });
   }
 }
 const ACCEPT = '.xlsx,.xls,.xlsm,.xlsb,.ods,.csv,.tsv,.txt,.json,.pdf,.html,.htm';
@@ -1708,34 +1712,43 @@ async function quickImport(file){
     $$('[data-sh]', msg).forEach(b => b.onclick = () => { try { go(+b.dataset.sh); } catch (e){ say(`<p class="err" style="margin-top:12px">${esc(e.message)}</p>`); } });
   } catch (e){ console.error(e); say(`<p class="err" style="margin-top:12px">Could not read that file: ${esc(e.message || e)}</p>`); }
 }
-/* The last workbook with several sheets stays available, so its other sheets open as new reports without uploading again. */
+/* The last workbook with several sheets stays available, so its other sheets can be added as pages without uploading again. */
 let BOOK = null;   // {base, sheets: [{name, get}], opened: Set of sheet indexes}
 function rememberBook(base, sheets){ if (BOOK?.sheets !== sheets) BOOK = {base, sheets, opened: new Set()}; }
 function openBookSheet(i){
   const sh = BOOK.sheets[i], name = `${BOOK.base} – ${sh.name}`;
-  const existing = REPORTS.find(r => (r.id === S.reportId ? S.active : r.active) === name);
   BOOK.opened.add(i);
-  if (existing){ switchReport(existing.id); return; }
+  const here = S.pages.findIndex(pg => pg.ds === name);
+  if (here >= 0){ S.pageIdx = here; S.selected = null; renderAll(); return; }
+  const other = REPORTS.find(r => r.id !== S.reportId && (r.pages || []).some(pg => pg.ds === name));
+  if (other){ switchReport(other.id); return; }
   const t = sh.get();
-  buildFromTable(name, t.names, t.records);
+  buildFromTable(name, t.names, t.records, null, {page: sh.name, report: BOOK.base});
   offerMoreSheets();
 }
 function offerMoreSheets(){
   if (!BOOK) return;
   const left = BOOK.sheets.length - BOOK.opened.size;
-  if (left > 0) toast(`Dashboard ready for “${S.active}”. ${left} more sheet${left === 1 ? '' : 's'} in this file.`, 'Open another sheet', () => openReportsMenu());
+  if (left > 0) toast(`Page “${page().name}” is ready. ${left} more sheet${left === 1 ? '' : 's'} in this file.`, 'Add another sheet', () => openReportsMenu());
 }
-function buildFromTable(name, names, records, source = null){
+/* Load a table and build its dashboard.
+   By default it becomes a new page in the current report (or fills the page you are on, if that page is empty).
+   opts.newReport opens it as a separate report instead. opts.page names the page, opts.report names a blank report. */
+function buildFromTable(name, names, records, source = null, opts = {}){
   const n = loadDataset(name, names, records);
   if (source) S.datasets[n].source = {...source, refreshed: new Date().toISOString()};
   const cur = curReport();
   const blank = cur && !ds() && !S.pages.some(pg => pg.visuals.length);
-  if (blank){ cur.name = n; S.active = n; S.sel = {}; S.dt = null; buildModel(); S.pages = []; }
-  else { newReport(n, n, []); S.pages = []; }
-  autoBuild();
-  S.pages.forEach(pg => { if (pg.name.startsWith('Overview · ')) pg.name = 'Overview'; });
-  S.pageIdx = 0; renderAll();
-  toast(`Built a dashboard from ${records.length.toLocaleString()} rows of “${n}”. Click any visual to change it.`);
+  if (opts.newReport && !blank){ newReport(opts.report || n, n, []); S.pages = []; }
+  else if (blank){ cur.name = opts.report || n; S.pages = []; }
+  const target = S.pages.length && !page().visuals.length ? S.pageIdx : -1;   // an empty page you just added
+  S.active = n; S.dt = null; buildModel();
+  autoBuild(opts.page || n);
+  const built = S.pages.length - 1;
+  if (target >= 0){ const [pg] = S.pages.splice(built, 1); pg.id = S.pages[target].id; S.pages[target] = pg; S.pageIdx = target; }
+  else S.pageIdx = built;
+  renderAll();
+  toast(`Added page “${page().name}” from ${records.length.toLocaleString()} rows. Click any visual to change it.`);
   return n;
 }
 function startOver(){
@@ -1842,7 +1855,20 @@ function renderBuild(){
     <div class="sect" style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="mvup" type="button" aria-label="Move earlier">↑ Move</button><button class="btn sm" data-act="mvdn" type="button" aria-label="Move later">↓ Move</button><button class="btn sm" data-act="dup" type="button">Duplicate</button><button class="btn sm danger" data-act="del" type="button">Remove</button><button class="btn sm ghost" data-act="desel" type="button">Done</button></div>`;
 }
 
+/* Each page can use its own dataset (page.ds), so one report can hold several sheets. */
+function syncPageData(){
+  const want = page()?.ds;
+  if (!want || want === S.active || !S.datasets[want]) return true;
+  if (!S.datasets[want].rows){ fetchRows(want).then(() => renderAll(), e => toast(e.message)); return false; }
+  S.active = want; buildModel(); return true;
+}
+async function ensurePageData(i){
+  const want = S.pages[i]?.ds;
+  if (want && S.datasets[want] && !S.datasets[want].rows) await fetchRows(want);
+  S.pageIdx = i; syncPageData();
+}
 function renderAll(){
+  syncPageData();
   renderReportBtn(); renderTabs();
   if (!$('#chat').hidden && !CH.busy) renderChat(); renderSelbar(); renderFields(); renderCanvas(); renderBuild(); save();
 }
@@ -2056,7 +2082,7 @@ B.addEventListener('drop', e => {
 // tabs
 $('#tabs').addEventListener('click', e => {
   const del = e.target.closest('[data-delpage]'); if (del) return deletePage(+del.dataset.delpage);
-  if (e.target.id === 'addPage'){ S.pages.push({id: uid(), name: 'Page ' + (S.pages.length + 1), visuals: []}); S.pageIdx = S.pages.length - 1; S.selected = null; return renderAll(); }
+  if (e.target.id === 'addPage'){ S.pages.push({id: uid(), name: 'Page ' + (S.pages.length + 1), ds: S.active || undefined, visuals: []}); S.pageIdx = S.pages.length - 1; S.selected = null; return renderAll(); }
   const i = e.target.closest('.tab')?.dataset.i; if (i == null || +i === S.pageIdx) return;
   S.pageIdx = +i; S.selected = null; renderAll();
 });
@@ -2256,6 +2282,7 @@ function parseAny(text, filename = ''){
 function switchDataset(name){
   if (!S.datasets[name]) return;
   if (!S.datasets[name].rows){ toast(`Loading “${name}”…`); fetchRows(name).then(() => switchDataset(name), e => toast(e.message)); return; }
+  if (page()) page().ds = name;
   S.active = name; S.sel = {}; buildModel(); renderAll();
 }
 
@@ -2472,16 +2499,18 @@ function showPreview(box, sheets, baseName, source = null){
       <div class="preview"><table class="grid"><thead><tr>${cols.map(c => `<th>${esc(c.name)} <span class="tag">${tl[c.type]}</span></th>`).join('')}</tr></thead>
       <tbody>${cur.records.slice(0, 8).map(r => `<tr>${cols.map(c => `<td class="${c.type === 'number' ? 'num' : ''}">${esc(r[c.name])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
       <div class="form-row"><input type="text" id="pName" value="${esc(dflt)}" aria-label="Dataset name" style="flex:1 1 200px">
-      <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pNew" checked> Open in a new report</label>
+      <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pNew"> Open as a separate report</label>
       <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pAuto" checked> Build a starter page</label>
       <button class="btn primary" id="pGo" type="button">Load ${cur.records.length.toLocaleString()} rows</button><button class="btn ghost" id="pCancel" type="button">Cancel</button></div>`;
     $('#pSheet')?.addEventListener('change', e => { idx = +e.target.value; draw(); });
     $('#pCancel').onclick = () => { box.innerHTML = ''; };
     $('#pGo').onclick = () => {
-      if ($('#pAuto').checked && $('#pNew').checked){
-        const nm = $('#pName').value.trim() || dflt; closeModal();
-        if (sheets.length > 1 && !source){ rememberBook(baseName, sheets); BOOK.opened.add(idx); }
-        buildFromTable(nm, cur.names, cur.records, source); offerMoreSheets(); return;
+      if ($('#pAuto').checked){
+        const nm = $('#pName').value.trim() || dflt, separate = $('#pNew').checked; closeModal();
+        const multi = sheets.length > 1 && !source;
+        if (multi){ rememberBook(baseName, sheets); BOOK.opened.add(idx); }
+        buildFromTable(nm, cur.names, cur.records, source, {newReport: separate, page: multi ? sheets[idx].name : undefined, report: multi ? baseName : undefined});
+        offerMoreSheets(); return;
       }
       const n = loadDataset($('#pName').value || dflt, cur.names, cur.records);
       if (source) S.datasets[n].source = {...source, refreshed: new Date().toISOString()};
@@ -2494,12 +2523,11 @@ function showPreview(box, sheets, baseName, source = null){
         else { S.pages = [{id: uid(), name: 'Page 1', visuals: []}]; S.pageIdx = 0; renderAll(); }
         HIST.stack = []; HIST.i = -1; commit();
       } else {
-        S.active = n; S.sel = {}; buildModel();
-        if (auto) autoBuild(); else renderAll();
+        S.active = n; if (page()) page().ds = n; buildModel(); renderAll();
       }
       const big = JSON.stringify(cur.records).length > 4e6;
       toast(fresh ? `Opened “${n}” as a new report. “${prevName}” is unchanged; switch back from the report menu next to the logo.`
-        : `Loaded ${cur.records.length.toLocaleString()} rows into “${n}”.`, big ? null : null);
+        : `This page now uses “${n}”. Add visuals with the Visual button.`);
       if (big) setTimeout(() => toast('This file is large and may not be kept after you close this tab.'), 5200);
     };
   };
@@ -2747,7 +2775,7 @@ async function exportPDF(idxs, light, progress){
   try {
     for (const [n, i] of idxs.entries()){
       progress(`Rendering page ${n + 1} of ${idxs.length}…`);
-      S.pageIdx = i; colorCache.clear(); renderTabs(); renderCanvas();
+      await ensurePageData(i); colorCache.clear(); renderTabs(); renderCanvas();
       $('#canvasWrap').scrollTop = 0;
       await frame(); await frame(); await sleep(120);
       charts.forEach(c => c.resize());
@@ -2811,13 +2839,15 @@ async function exportXLSX(idxs, includeRows){
   };
   const summary = [['Miyar export'], [], ['Dataset', S.active], ['Rows in view', globalRows().length], ['Selections', selText()], ['Exported', new Date().toLocaleString()], [], ['Page', 'Visual', 'Type', 'Sheet']];
   const sheets = [];
-  for (const i of idxs) for (const v of S.pages[i].visuals){
+  const keepPage = S.pageIdx;
+  for (const i of idxs){ await ensurePageData(i); for (const v of S.pages[i].visuals){
     const tb = visualTable(v); if (!tb || !tb.rows.length) continue;
     const title = v.title || autoTitle(effective(v));
     const nm = sheetName(title);
     summary.push([S.pages[i].name, title, TYPES[v.type].label, nm]);
     sheets.push([nm, sheetFrom(tb.header, tb.rows, tb.fmts)]);
-  }
+  } }
+  S.pageIdx = keepPage; syncPageData();
   const sws = XLSX.utils.aoa_to_sheet(summary); sws['!cols'] = [{wch: 22}, {wch: 44}, {wch: 20}, {wch: 30}];
   XLSX.utils.book_append_sheet(wb, sws, sheetName('Summary'));
   for (const [nm, ws] of sheets) XLSX.utils.book_append_sheet(wb, ws, nm);
@@ -2859,7 +2889,7 @@ function reportJSON(){
 
 /* ============================== auto-build ============================== */
 /* Builds a starter dashboard from whatever columns the data has: headline figures, a trend, breakdowns and a detail table. */
-function autoBuild(){
+function autoBuild(pageName){
   if (!ds()){ openData('import'); return; }
   const cols = ds().columns;
   const card = new Map(cols.map(c => [c.name, new Set(ROWS.map(r => r[c.name])).size]));
@@ -2899,7 +2929,7 @@ function autoBuild(){
   const tms = [main, ...(profit ? [{f: 'Profit', agg: 'sum'}, {f: 'Margin %', agg: 'sum'}] : []), ...nums.slice(1).filter(c => c.name !== cost?.name || !profit).slice(0, 2).map(c => ({f: c.name, agg: 'sum'}))]
     .filter((m, i, a) => a.findIndex(x => x.f === m.f) === i).slice(0, 5);
   if (tdims.length || nums.length) vis.push(newVisual('table', {title: tdims.length ? `${tdims.join(' and ')} detail` : 'Totals', dims: tdims, measures: tms, bars: true, w: 12, h: 6}));
-  S.pages.push({id: uid(), name: 'Overview · ' + S.active.slice(0, 24), visuals: vis});
+  S.pages.push({id: uid(), name: pageName || ('Overview · ' + S.active.slice(0, 24)), ds: S.active, visuals: vis});
   S.pageIdx = S.pages.length - 1; S.selected = null;
   renderAll();
 }
@@ -3364,7 +3394,7 @@ function openReportsMenu(){
   const m = document.createElement('div');
   m.className = 'ctx'; m.setAttribute('role', 'menu');
   m.innerHTML = `<div class="h">Your reports</div>${REPORTS.map(r => `<button type="button" role="menuitem" class="rep ${r.id === S.reportId ? 'on' : ''}" data-rep="${esc(r.id)}"><span style="overflow:hidden;text-overflow:ellipsis">${esc(r.name)}</span><small>${(r.id === S.reportId ? S.pages : r.pages || []).length} pg</small></button>`).join('')}
-    ${BOOK && canEdit() ? `<hr><div class="h">Sheets in ${esc(BOOK.base)}</div>${BOOK.sheets.map((sh, i) => `<button type="button" role="menuitem" class="rep" data-sheet="${i}"><span style="overflow:hidden;text-overflow:ellipsis">${esc(sh.name)}</span><small>${BOOK.opened.has(i) ? 'open' : 'open as new report'}</small></button>`).join('')}` : ''}
+    ${BOOK && canEdit() ? `<hr><div class="h">Sheets in ${esc(BOOK.base)} · add as pages</div>${BOOK.sheets.map((sh, i) => `<button type="button" role="menuitem" class="rep" data-sheet="${i}"><span style="overflow:hidden;text-overflow:ellipsis">${esc(sh.name)}</span><small>${S.pages.some(pg => pg.ds === `${BOOK.base} – ${sh.name}`) ? 'go to page' : 'add as page'}</small></button>`).join('')}` : ''}
     <hr><button type="button" role="menuitem" data-r="import">Import a file into a new report…</button>
     <button type="button" role="menuitem" data-r="new">New blank report</button>
     <button type="button" role="menuitem" data-r="rename">Rename this report…</button>
