@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Miyar (معيار): your business benchmark. A self-service business intelligence app.">
+<meta name="description" content="Miyar (معيار) · Benchmark. A self-service business intelligence app.">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -408,7 +408,7 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
 
 <div id="app">
   <header class="top">
-    <div class="brand" title="Miyar · Your business benchmark · معيار أعمالك">
+    <div class="brand" title="Miyar (معيار) · Benchmark">
       <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="12" width="5" height="10" rx="1.5" fill="var(--s1)"/><rect x="9.5" y="6" width="5" height="16" rx="1.5" fill="var(--accent)"/><rect x="17" y="2" width="5" height="20" rx="1.5" fill="var(--s3)"/></svg>
       Miyar <small lang="ar" dir="rtl" style="text-transform:none;letter-spacing:0;font-size:13px">معيار</small>
     </div>
@@ -2645,7 +2645,7 @@ async function exportPDF(idxs, light, progress){
         pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(95, 101, 115);
         pdf.text(pdf.splitTextToSize(`${S.active}  ·  Selections: ${selText()}  ·  Exported ${new Date().toLocaleString()}`, contentW)[0], M, M + 22);
         pdf.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', M, top, contentW, h * scale, undefined, 'FAST');
-        pdf.setFontSize(8); pdf.text(`Miyar · your business benchmark  ·  ${sheet}`, W - M, H - M / 2, {align: 'right'});
+        pdf.setFontSize(8); pdf.text(`Miyar · Benchmark  ·  ${sheet}`, W - M, H - M / 2, {align: 'right'});
       }
     }
   } finally {
@@ -3452,7 +3452,7 @@ function showSignIn(reason){
   document.body.insertAdjacentHTML('beforeend', `<div class="signin" id="signin" role="dialog" aria-label="Sign in"><div class="signin-card">
     <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="12" width="5" height="10" rx="1.5" fill="var(--s1)"/><rect x="9.5" y="6" width="5" height="16" rx="1.5" fill="var(--accent)"/><rect x="17" y="2" width="5" height="20" rx="1.5" fill="var(--s3)"/></svg>
     <h1>Miyar <span lang="ar" style="font-weight:500;color:var(--ink3);font-size:18px">معيار</span></h1>
-    <p class="tagline">Your business benchmark · <span lang="ar">معيار أعمالك</span></p>
+    <p class="tagline">Benchmark</p>
     <p><b>${esc(SRV.cfg?.org || '')}</b></p>
     ${reason === 'expired' ? '<p class="err">Your session has ended. Sign in again to keep working; changes from the last few seconds may not have been saved.</p>' : ''}
     <a class="btn primary" href="auth/login?next=${encodeURIComponent(next)}">Sign in with ${esc(SRV.cfg?.provider || 'your company account')}</a>
