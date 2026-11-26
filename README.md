@@ -2,11 +2,11 @@
 
 *Miyar* (معيار) is Arabic for a measure, standard or benchmark: the thing every dashboard tracks.
 
-**The measure of your business · مقياس أعمالك**
+**Your business benchmark · معيار أعمالك**
 
 A self-service business intelligence app that runs entirely in the browser. It's a single HTML file, with no server, no build step and no account.
 
-**Live app:** https://arorasahil29.github.io/Basira/
+**Live app:** https://arorasahil29.github.io/Miyar/
 
 ## Run it
 
