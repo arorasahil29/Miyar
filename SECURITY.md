@@ -1,6 +1,6 @@
 # Miyar security summary
 
-For IT security and compliance review. Version **1.0.0** (git tag `v1.0.0`).
+For IT security and compliance review. Version **1.1.0** (git tag `v1.1.0`; 1.0.0 is commit 317134e).
 
 ## What to deploy
 
@@ -77,12 +77,12 @@ cd secure && sha256sum -c SHA256SUMS
 Every line should end in `OK`. `build.json` records the version, the source commit, the security policy, each library's integrity hash, and the size and SHA-256 of every file. To reproduce the build from source:
 
 ```bash
-git checkout v1.0.0 && cd tools && npm ci && npm run build:secure
+git checkout v1.1.0 && cd tools && npm ci && npm run build:secure
 ```
 
 ## Versions
 
-- Releases are git tags (`v1.0.0`, …).
-- The version shows in the **Report** dialog and on the logo tooltip ("Miyar 1.0.0 · secured build").
+- Releases are git tags (`v1.0.0`, `v1.1.0`, …).
+- The version shows in the **Report** dialog and on the logo tooltip ("Miyar 1.1.0 · secured build").
 - Approve a specific tag and its `SHA256SUMS`. A new version needs a new review.
 - Report security issues privately to the repository owner, not as public issues.

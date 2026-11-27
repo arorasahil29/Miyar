@@ -569,8 +569,8 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-const LS_KEY = 'miyar-v1';
-try { ['facet-bi-v1', 'facet-bi-v2'].forEach(k => localStorage.removeItem(k)); } catch {}   // data from earlier versions is not carried over
+const LS_KEY = 'miyar-v2';
+try { ['facet-bi-v1', 'facet-bi-v2', 'miyar-v1'].forEach(k => localStorage.removeItem(k)); } catch {}   // data from earlier versions is not carried over
 const store = {
   get(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch { return null; } },
   set(v){ try { localStorage.setItem(LS_KEY, JSON.stringify(v)); return true; } catch { return false; } }
@@ -578,7 +578,7 @@ const store = {
 
 /* Version and build. The secured build (tools/build-secure.mjs) marks itself with <meta name="miyar-build" content="secure">,
    serves every library and font from its own folder, and lists their SHA-384 hashes in #miyar-integrity. */
-const MIYAR_VERSION = '1.0.0';
+const MIYAR_VERSION = '1.1.0';
 const SECURE = document.querySelector('meta[name="miyar-build"]')?.content === 'secure';
 const INTEGRITY = (() => { try { return JSON.parse(document.getElementById('miyar-integrity')?.textContent || '{}'); } catch { return {}; } })();
 const BUILD_LABEL = `Miyar ${MIYAR_VERSION}${SECURE ? ' · secured build' : ''}`;
@@ -698,6 +698,108 @@ const SAMPLE_CALCS = [
   {name:'Discount Band', expr:'IF([Discount] = 0, "No discount", IF([Discount] <= 0.1, "Up to 10%", "Over 10%"))'},
 ];
 const SAMPLE_FMT = {'Discount':'percent', 'Units':'number'};
+
+/* Employee attendance: one row per employee per working day (Sunday to Thursday), January to October 2026.
+   Fictional people. Public holidays are left out; each person takes a block or two of annual leave. */
+const ATT_NAME = 'Sample: Employee Attendance';
+function makeAttendance(){
+  const rng = mulberry32(20260101);
+  const P = [
+    ['Ahmed Al-Harbi','Finance','Riyadh'], ['Sara Al-Qahtani','Human Resources','Riyadh'], ['Omar Khan','IT','Riyadh'], ['Fatima Al-Zahrani','Sales','Jeddah'],
+    ['John Mathews','Operations','Dammam'], ['Priya Nair','IT','Riyadh'], ['Khalid Al-Otaibi','Sales','Riyadh'], ['Noura Al-Dosari','Customer Service','Jeddah'],
+    ['Rahul Sharma','Finance','Riyadh'], ['Lina Haddad','Human Resources','Jeddah'], ['Yousef Al-Shehri','Operations','Dammam'], ['Maria Santos','Customer Service','Riyadh'],
+    ['Faisal Al-Mutairi','Sales','Dammam'], ['Huda Al-Ghamdi','IT','Jeddah'], ['David Chen','Finance','Riyadh'], ['Reem Al-Anazi','Customer Service','Riyadh'],
+    ['Hassan Ali','Operations','Riyadh'], ['Aisha Siddiqui','Sales','Jeddah'], ['Mohammed Al-Shammari','Operations','Dammam'], ['Anita George','IT','Riyadh'],
+    ['Saleh Al-Juhani','Customer Service','Jeddah'], ['Dana Al-Rashid','Finance','Jeddah'], ['Imran Qureshi','Sales','Riyadh'], ['Mona Farouk','Human Resources','Riyadh'],
+  ].map(([name, dept, loc], i) => ({id: 'EMP-' + (1001 + i), name, dept, loc,
+    absent: 0.008 + rng() * 0.035, late: 0.03 + Math.pow(rng(), 2) * 0.22, remote: ['IT', 'Finance'].includes(dept) ? 0.08 + rng() * 0.12 : rng() * 0.03, sick: 0.006 + rng() * 0.015}));
+  const holidays = new Set(['2026-02-22', '2026-03-19', '2026-03-22', '2026-03-23', '2026-03-24', '2026-05-26', '2026-05-27', '2026-05-28', '2026-05-31', '2026-09-23']);
+  const days = [];
+  for (let t = Date.UTC(2026, 0, 1); t <= Date.UTC(2026, 9, 31); t += 864e5){
+    const d = new Date(t), iso = d.toISOString().slice(0, 10);
+    if (d.getUTCDay() <= 4 && !holidays.has(iso)) days.push(iso);   // Sunday (0) to Thursday (4)
+  }
+  const hhmm = m => { m = Math.round(m); return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+  const rows = [];
+  for (const e of P){
+    const leave = new Set();
+    for (let b = 0, blocks = 1 + (rng() < 0.6 ? 1 : 0); b < blocks; b++){
+      const at = Math.floor(rng() * (days.length - 12)), len = 3 + Math.floor(rng() * 8);
+      for (let k = 0; k < len; k++) leave.add(days[at + k]);
+    }
+    for (const day of days){
+      const m = +day.slice(5, 7), summer = m >= 6 && m <= 8 ? 1.4 : 1;   // a little more lateness and absence in summer
+      const x = rng();
+      let status = 'Present';
+      if (leave.has(day)) status = 'Annual leave';
+      else if (x < e.sick * summer) status = 'Sick leave';
+      else if (x < (e.sick + e.absent) * summer) status = 'Absent';
+      else if (x < (e.sick + e.absent) * summer + e.remote) status = 'Remote';
+      else if (rng() < e.late * summer) status = 'Late';
+      const at = status === 'Present' || status === 'Remote' ? 7 * 60 + 35 + rng() * 25 : status === 'Late' ? 8 * 60 + 16 + Math.pow(rng(), 1.6) * 70 : null;
+      const lateMin = status === 'Late' ? Math.round(at - 8 * 60) : 0;
+      const hours = at == null ? null : +(8 + (rng() - 0.35) * 1.6 - lateMin / 120).toFixed(1);
+      const worked = status === 'Present' || status === 'Late' || status === 'Remote';
+      rows.push({'Date': day, 'Employee ID': e.id, 'Employee Name': e.name, 'Department': e.dept, 'Location': e.loc, 'Status': status,
+        'Check In': at == null ? null : hhmm(at), 'Hours Worked': hours, 'Late Minutes': lateMin,
+        'Days Present': worked ? 1 : 0, 'Absences': status === 'Absent' ? 1 : 0, 'Leave Days': status.endsWith('leave') ? 1 : 0, 'Late Arrivals': status === 'Late' ? 1 : 0});
+    }
+  }
+  rows.sort((a, b) => a.Date < b.Date ? -1 : a.Date > b.Date ? 1 : a['Employee Name'] < b['Employee Name'] ? -1 : 1);
+  return {name: ATT_NAME, sample: true, rows, columns: [
+    {name:'Date', type:'date'}, {name:'Employee ID', type:'string'}, {name:'Employee Name', type:'string'}, {name:'Department', type:'string'},
+    {name:'Location', type:'string'}, {name:'Status', type:'string'}, {name:'Check In', type:'string'}, {name:'Hours Worked', type:'number'},
+    {name:'Late Minutes', type:'number'}, {name:'Days Present', type:'number'}, {name:'Absences', type:'number'}, {name:'Leave Days', type:'number'}, {name:'Late Arrivals', type:'number'},
+  ]};
+}
+const ATT_CALCS = [
+  {name:'Attendance %', expr:'SUM([Days Present]) / (SUM([Days Present]) + SUM([Absences]))', fmt:'percent'},
+  {name:'Punctuality %', expr:'1 - SUM([Late Arrivals]) / SUM([Days Present])', fmt:'percent'},
+];
+const ATT_FMT = {'Hours Worked':'number', 'Late Minutes':'number', 'Days Present':'number', 'Absences':'number', 'Leave Days':'number', 'Late Arrivals':'number'};
+/* Generated samples are not saved with the report; they are made again when a report that uses one opens. */
+const SAMPLES = {
+  'Sample: Retail Orders': {make: () => makeSample(), calcs: () => SAMPLE_CALCS, fmt: () => SAMPLE_FMT},
+  [ATT_NAME]: {make: makeAttendance, calcs: () => ATT_CALCS, fmt: () => ATT_FMT},
+};
+function ensureSample(name, keepCalcs = true){
+  const def = SAMPLES[name]; if (!def) return false;
+  if (!S.datasets[name]) S.datasets[name] = def.make();
+  if (!keepCalcs || !S.calcs[name]) S.calcs[name] = def.calcs().map(c => ({...c}));
+  if (!keepCalcs || !S.fmt[name]) S.fmt[name] = {...def.fmt()};
+  return true;
+}
+function attendanceReport(){
+  const V = newVisual, M = f => ({f, agg: 'sum'});
+  const detail = {id: uid(), name: 'Employee details', ds: ATT_NAME, visuals: [
+    V('slicer', {title: 'Employee', dims: ['Employee Name'], w: 3, h: 8}),
+    V('multicard', {title: 'Selected employees', measures: [M('Attendance %'), M('Days Present'), M('Absences'), M('Leave Days'), M('Late Arrivals'), {f: 'Hours Worked', agg: 'avg'}], w: 9, h: 2}),
+    V('stacked', {title: 'Days by status, each month', dims: ['Date (Month)'], legend: 'Status', measures: [{f: RECORDS, agg: 'count'}], w: 6, h: 4}),
+    V('donut', {title: 'Status mix', dims: ['Status'], measures: [{f: RECORDS, agg: 'count'}], w: 3, h: 4}),
+    V('calendar', {title: 'Days present', dims: ['Date'], measures: [M('Days Present')], w: 9, h: 3}),
+    V('table', {title: 'Daily attendance', dims: ['Date', 'Employee Name', 'Status', 'Check In'], measures: [M('Hours Worked'), M('Late Minutes')], tsort: 0, tdir: -1, w: 12, h: 7}),
+  ]};
+  const overview = {id: uid(), name: 'Attendance overview', ds: ATT_NAME, visuals: [
+    V('kpi', {measures: [M('Attendance %')], dims: ['Date (Month)'], w: 3, h: 2}),
+    V('kpi', {title: 'Days present', measures: [M('Days Present')], dims: ['Date (Month)'], w: 3, h: 2}),
+    V('kpi', {title: 'Absences', measures: [M('Absences')], dims: ['Date (Month)'], lowerBetter: true, w: 3, h: 2}),
+    V('kpi', {title: 'Late arrivals', measures: [M('Late Arrivals')], dims: ['Date (Month)'], lowerBetter: true, w: 3, h: 2}),
+    V('slicer', {title: 'Employee', dims: ['Employee Name'], w: 3, h: 8}),
+    V('stacked', {title: 'Attendance by month', dims: ['Date (Month)'], legend: 'Status', measures: [{f: RECORDS, agg: 'count'}], w: 9, h: 4}),
+    V('column', {title: 'Absences and late arrivals by month', dims: ['Date (Month)'], measures: [M('Absences'), M('Late Arrivals')], w: 5, h: 4}),
+    V('slicer', {title: 'Department', dims: ['Department'], w: 4, h: 4}),
+    V('matrix', {title: 'Attendance % by employee and month · click a name for details', dims: ['Employee Name'], legend: 'Date (Month)', measures: [M('Attendance %')], heat: true, clickAction: detail.id, w: 12, h: 8}),
+    V('table', {title: 'Employee summary', dims: ['Employee Name', 'Department', 'Location'], measures: [M('Attendance %'), M('Days Present'), M('Absences'), M('Leave Days'), M('Late Arrivals'), M('Punctuality %')], bars: true, clickAction: detail.id, w: 12, h: 7}),
+  ]};
+  return [overview, detail];
+}
+function loadAttendanceSample(){
+  ensureSample(ATT_NAME, false);
+  S.active = ATT_NAME; buildModel();
+  S.pages = attendanceReport(); S.pageIdx = 0; S.sel = {}; S.selected = null; S.dt = null;
+  const r = curReport(); if (r){ r.name = 'Employee attendance'; renderReportBtn(); }
+  renderAll();
+}
 
 /* ============================== state ============================== */
 const S = {
@@ -1453,7 +1555,7 @@ function renderKpi(v, body){
       const pct = fmtKind(m) === 'percent';
       if (prev || (pct && prev != null && last != null)){
         const ch = pct ? last - prev : (last - prev) / Math.abs(prev);
-        html += `<span class="${ch >= 0 ? 'up' : 'down'}">${ch >= 0 ? '▲' : '▼'} ${(Math.abs(ch) * 100).toFixed(1)}${pct ? ' pts' : '%'}</span><span>${esc(trend[trend.length - 1][0])} vs prior</span>`;
+        html += `<span class="${Math.abs(ch) < 5e-4 ? '' : (ch >= 0) !== !!v.lowerBetter ? 'up' : 'down'}">${ch >= 0 ? '▲' : '▼'} ${(Math.abs(ch) * 100).toFixed(1)}${pct ? ' pts' : '%'}</span><span>${esc(trend[trend.length - 1][0])} vs prior</span>`;
       }
     }
   }
@@ -1788,7 +1890,7 @@ function welcomeHtml(){
         <span class="fmt">${chips.map(c => `<i>${c}</i>`).join('')}<i>+ more</i></span><span class="cta">Pick a source →</span></button>
     </div>
     <input type="file" id="wFile" accept="${ACCEPT}" hidden>
-    <div class="alt">Or <button type="button" data-w="paste">paste data</button>·<button type="button" data-w="sample">explore sample data</button></div>`;
+    <div class="alt">Or <button type="button" data-w="paste">paste data</button>·<button type="button" data-w="attendance">employee attendance sample</button>·<button type="button" data-w="sample">retail sample</button></div>`;
   }
   return `<div class="welcome"><div class="welcome-in wide">${LOGO}<h2>${esc(head[0])}</h2><p>${esc(head[1])}</p>${bar}${body}<div id="wMsg" aria-live="polite"></div>
     <p class="privacy">${SRV.on ? `Data you add is saved to ${esc(SRV.cfg.org)}'s Miyar server and shared with your colleagues.` : 'Files are read in this browser and are not uploaded anywhere.'}</p></div></div>`;
@@ -1811,6 +1913,7 @@ function bindWelcome(){
     if (k === 'all'){ const ok = W.info.map((x, n) => x.err ? -1 : n).filter(n => n >= 0); W.sel = W.sel.size === ok.length ? new Set() : new Set(ok); renderCanvas(); }
     if (k === 'paste'){ openData('import'); setTimeout(() => { $('#dlgBody details')?.setAttribute('open', ''); $('#pText')?.focus(); }, 0); }
     if (k === 'sample'){ const r = curReport(); if (r) r.name = 'Retail sample'; resetToSample(); }
+    if (k === 'attendance') loadAttendanceSample();
   });
   $$('[data-c]', root).forEach(b => b.onclick = () => { SRC.want = b.dataset.c; openData('sources'); });
   $$('[data-si]', root).forEach(cb => cb.onchange = () => { const n = +cb.dataset.si; cb.checked ? W.sel.add(n) : W.sel.delete(n); renderCanvas(); });
@@ -1983,6 +2086,7 @@ function renderBuild(){
       ${isCart || v.type === 'heatmap' || v.type === 'waterfall' ? `<label for="o-labels">Data labels</label><input id="o-labels" type="checkbox" ${v.labels ? 'checked' : ''}>` : ''}
       ${v.type === 'table' ? `<label for="o-bars">Data bars</label><input id="o-bars" type="checkbox" ${v.bars ? 'checked' : ''}>` : ''}
       ${v.type === 'matrix' ? `<label for="o-heat">Color scale</label><input id="o-heat" type="checkbox" ${v.heat ? 'checked' : ''}>` : ''}
+      ${v.type === 'kpi' ? `<label for="o-low" title="Show a rise in red and a fall in green, e.g. for absences or costs">Lower is better</label><input id="o-low" type="checkbox" ${v.lowerBetter ? 'checked' : ''}>` : ''}
       ${v.type === 'histogram' ? `<label for="o-bins">Bins</label><input id="o-bins" type="number" min="2" max="100" value="${v.bins || 20}">` : ''}
       ${v.type === 'gauge' ? `<label for="o-gmax">Maximum</label><input id="o-gmax" type="number" min="0" step="any" value="${v.gmax || 0}" title="0 picks a maximum automatically">` : ''}
       ${CLICKABLE.includes(v.type) ? `<label for="o-click">On click</label><select id="o-click"><option value="">Filter the report</option>${S.pages.filter(pg => pg.id !== page().id).map(pg => `<option value="${esc(pg.id)}" ${v.clickAction === pg.id ? 'selected' : ''}>Open page “${esc(pg.name)}”</option>`).join('')}</select>` : ''}
@@ -2024,7 +2128,7 @@ function tickerItems(){
   // headline figures: the page's KPI cards, else its multi-row card, else the first numeric column
   let heads = [];
   for (const v of p.visuals){
-    if (v.type === 'kpi' && v.measures[0] && !missingFields(v).length) heads.push({m: v.measures[0], label: v.title || measureLabel(v.measures[0]), trend: v.dims[0]});
+    if (v.type === 'kpi' && v.measures[0] && !missingFields(v).length) heads.push({m: v.measures[0], label: v.title || measureLabel(v.measures[0]), trend: v.dims[0], lowerBetter: !!v.lowerBetter});
     if (v.type === 'multicard' && !missingFields(v).length) v.measures.forEach(m => heads.push({m, label: measureLabel(m)}));
   }
   if (!heads.length){
@@ -2045,7 +2149,7 @@ function tickerItems(){
         if (last != null && prev){
           const pct = fmtKind(h.m) === 'percent';
           const ch = pct ? last - prev : (last - prev) / Math.abs(prev);
-          it.delta = {up: ch >= 0, text: `${(Math.abs(ch) * 100).toFixed(1)}${pct ? ' pts' : '%'}`, note: `${ks.at(-1)} vs prior`};
+          it.delta = {up: ch >= 0, good: (ch >= 0) !== !!h.lowerBetter, text: `${(Math.abs(ch) * 100).toFixed(1)}${pct ? ' pts' : '%'}`, note: `${ks.at(-1)} vs prior`};
         }
       }
     }
@@ -2093,7 +2197,7 @@ function renderTicker(){
     el.hidden = !items.length;
     if (!items.length){ TICK.html = ''; return; }
     const one = items.map(it => {
-      const inner = `<span class="l">${esc(it.label)}</span>${it.value !== '' ? ` <b>${esc(it.value)}</b>` : ''}${it.sub ? ` <span class="n">${esc(it.sub)}</span>` : ''}${it.delta ? ` <span class="${it.delta.up ? 'up' : 'down'}">${it.delta.up ? '▲' : '▼'} ${esc(it.delta.text)}</span> <span class="n">${esc(it.delta.note)}</span>` : ''}`;
+      const inner = `<span class="l">${esc(it.label)}</span>${it.value !== '' ? ` <b>${esc(it.value)}</b>` : ''}${it.sub ? ` <span class="n">${esc(it.sub)}</span>` : ''}${it.delta ? ` <span class="${(it.delta.good ?? it.delta.up) ? 'up' : 'down'}">${it.delta.up ? '▲' : '▼'} ${esc(it.delta.text)}</span> <span class="n">${esc(it.delta.note)}</span>` : ''}`;
       return it.sel ? `<button class="tk-item" type="button" data-tf="${esc(it.sel[0])}" data-tv="${esc(it.sel[1])}" title="Filter the report to ${esc(it.sel[1])}">${inner}</button>` : `<span class="tk-item">${inner}</span>`;
     }).join('');
     if (one === TICK.html) return;
@@ -2299,7 +2403,7 @@ B.addEventListener('change', e => {
   const el = e.target;
   if (el.dataset.agg != null){ v.measures[+el.dataset.agg].agg = el.value; return changed(); }
   const map = {'o-sort':['sort', x => x.value], 'o-top':['top', x => clamp(+x.value || 0, 0, 500)], 'o-labels':['labels', x => x.checked], 'o-bars':['bars', x => x.checked],
-    'o-heat':['heat', x => x.checked], 'o-bins':['bins', x => clamp(+x.value || 20, 2, 100)], 'o-gmax':['gmax', x => Math.max(0, +x.value || 0)], 'o-drill':['drillMode', x => x.checked], 'o-click':['clickAction', x => x.value || null], 'o-w':['w', x => clamp(+x.value || 4, 2, 12)], 'o-h':['h', x => clamp(+x.value || 4, 2, 12)]};
+    'o-heat':['heat', x => x.checked], 'o-low':['lowerBetter', x => x.checked], 'o-bins':['bins', x => clamp(+x.value || 20, 2, 100)], 'o-gmax':['gmax', x => Math.max(0, +x.value || 0)], 'o-drill':['drillMode', x => x.checked], 'o-click':['clickAction', x => x.value || null], 'o-w':['w', x => clamp(+x.value || 4, 2, 12)], 'o-h':['h', x => clamp(+x.value || 4, 2, 12)]};
   if (map[el.id]){ v[map[el.id][0]] = map[el.id][1](el); changed(); }
 });
 B.addEventListener('input', e => {
@@ -3319,6 +3423,12 @@ const SYN = {
   store: ['store', 'stores', 'shop', 'shops', 'branch', 'branches', 'outlet', 'متجر', 'متاجر', 'فرع', 'فروع'],
   warehouse: ['warehouse', 'warehouses', 'depot', 'مستودع', 'مستودعات', 'مخزن', 'مخازن'],
   order: ['order', 'orders', 'transaction', 'transactions', 'invoice', 'invoices', 'طلب', 'طلبات', 'معامله', 'فاتوره', 'فواتير'],
+  attendance: ['attendance', 'attend', 'attended', 'حضور', 'الحضور', 'دوام'],
+  absence: ['absence', 'absences', 'absent', 'absenteeism', 'غياب', 'الغياب', 'غيابا', 'غيابات', 'غائب', 'تغيب'],
+  late: ['late', 'lateness', 'tardy', 'tardiness', 'تاخير', 'التاخير', 'تاخيرا', 'تاخر', 'تاخرا', 'متاخر', 'متاخرين', 'تاخيرات'],
+  leave: ['leave', 'leaves', 'vacation', 'vacations', 'اجازه', 'اجازات', 'الاجازات'],
+  hours: ['hours', 'hour', 'ساعات', 'ساعه', 'الساعات'],
+  punctuality: ['punctuality', 'punctual', 'انضباط', 'الانضباط', 'التزام'],
 };
 const TIME_SYN = {
   Year: ['year', 'years', 'yearly', 'annual', 'annually', 'سنه', 'سنوات', 'سنوي', 'عام', 'اعوام', 'سنويا'],
@@ -3371,12 +3481,14 @@ function valueIndex(){
   VALS = {key, map};
   return map;
 }
+const FIELD_STOP = new Set(['in', 'of', 'by', 'the', 'and', 'to', 'for', 'per', 'on', 'at', 'a', 'an', 'vs', 'or', 'with', 'from']);
 const fieldWords = name => norm(String(name).replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_\-\/]+/g, ' ')).split(' ').filter(Boolean);
 function scoreField(f, Q){
   const fw = fieldWords(f.name), full = fw.join(' '), hit = new Set();
   let sc = 0;
   if (fw.length > 1 && Q.pad.includes(' ' + full + ' ')){ sc += 6; fw.forEach(w => hit.add(w)); }
   for (const w of fw){
+    if (FIELD_STOP.has(w)) continue;   // "Check In", "Cost of Sales": small words alone do not point at a column
     if (stems(w).some(x => Q.toks.has(x))){ sc += 3; hit.add(w); }
     else if (w.length >= 5 && [...Q.toks].some(t => t.length >= 5 && lev(t, w) <= 1)){ sc += 2; hit.add(w); }
   }
@@ -3395,7 +3507,8 @@ function parseQuestion(q){
   // measures and dimensions mentioned by name or by a business word
   const score = f => { const r = scoreField(f, Q); return {f, s: r.sc, hit: r.hit}; };
   let meas = FIELDS.filter(f => f.role === 'measure' && f.src !== 'records').map(score).filter(x => x.s > 0).sort((a, b) => b.s - a.s);
-  let dims = FIELDS.filter(f => f.role === 'dim' && f.src !== 'part' && f.type !== 'date').map(score).filter(x => x.s > 0).sort((a, b) => b.s - a.s);
+  const idish = n => /(^|[\s_-])(id|code|no|number|key)$/i.test(n) ? 1 : 0;
+  let dims = FIELDS.filter(f => f.role === 'dim' && f.src !== 'part' && f.type !== 'date').map(score).filter(x => x.s > 0).sort((a, b) => b.s - a.s || idish(a.f.name) - idish(b.f.name));
   // a column matched only by a word that belongs to a better-matched column of the other kind is dropped
   // ("average discount" is not a breakdown by "Discount Band"; "how many orders" is not "Avg Order Value")
   const covered = (x, others) => others.some(o => o.s > x.s ? true : o.s === x.s && o === others[0]) && [...x.hit].every(w => others.some(o => o.s >= x.s && o.hit.has(w)));
@@ -3900,8 +4013,8 @@ function openPayload(payload, link){
   const rename = {};
   for (const d of payload.datasets){
     if (d.sample){
-      if (!S.datasets[d.name]){ const smp = makeSample(); S.datasets[smp.name] = smp; }
       S.calcs[d.name] ||= d.calcs || []; S.fmt[d.name] ||= d.fmt || {};
+      ensureSample(d.name);
       continue;
     }
     let name = d.name;
@@ -4162,15 +4275,13 @@ function init(){
   if (saved && Array.isArray(saved.reports) && saved.reports.length){
     for (const d of saved.datasets || []) S.datasets[d.name] = d;
     S.calcs = saved.calcs || {}; S.fmt = saved.fmt || {};
-    if (S.datasets['Sample: Retail Orders'] === undefined && saved.reports.some(r => r.active === 'Sample: Retail Orders')){
-      const smp = makeSample(); S.datasets[smp.name] = smp;
-      S.calcs[smp.name] ||= SAMPLE_CALCS.map(c => ({...c})); S.fmt[smp.name] ||= {...SAMPLE_FMT};
-    }
+    for (const n of Object.keys(SAMPLES)) if (saved.reports.some(r => r.active === n || (r.pages || []).some(pg => pg.ds === n))) ensureSample(n);
     REPORTS = saved.reports;
     loadReport(REPORTS.find(r => r.id === saved.current) || REPORTS[0]);
     return;
   }
-  blankStart();
+  blankStart(); loadAttendanceSample();
+  HIST.stack = []; HIST.i = -1; commit(); histButtons();   // the sample is where Reset returns to
 }
 /* ============================== Miyar server ==============================
    When the app is served by Miyar server (server/ in the repository), people sign in with their company
@@ -4381,9 +4492,7 @@ async function initServer(){
     SRV.dsIds.add(m.id); SRV.dsMeta[m.name] = dsKey(S.datasets[m.name]);
   }
   REPORTS = rl.reports.map(r => ({id: r.id, name: r.name, active: r.content.active, pages: r.content.pages, version: r.version}));
-  if (REPORTS.some(r => r.active === 'Sample: Retail Orders')){
-    const smp = makeSample(); S.datasets[smp.name] = smp; S.calcs[smp.name] = SAMPLE_CALCS.map(c => ({...c})); S.fmt[smp.name] = {...SAMPLE_FMT};
-  }
+  for (const n of Object.keys(SAMPLES)) if (REPORTS.some(r => r.active === n || (r.pages || []).some(pg => pg.ds === n))) ensureSample(n, false);
   for (const r of REPORTS){ SRV.saved[r.id] = repKey(r); SRV.repIds.add(r.id); }
   document.body.classList.toggle('readonly', !canEdit());
   renderUser(); setSync('saved');
