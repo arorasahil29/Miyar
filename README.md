@@ -38,6 +38,15 @@ docker compose up -d --build
 
 This starts four pieces: the Miyar server (web app and API), PostgreSQL, and Miyar Gateway for live data. The same setup runs on a company server or in any cloud that runs containers: AWS ECS or App Runner, Azure Container Apps, Google Cloud Run, or Kubernetes. Setup for Microsoft Entra ID, Google, Okta and Keycloak is in [server/README.md](server/README.md).
 
+## Secured build (for regulated or confidential environments)
+
+[`secure/`](secure/) is the same app with every library and font included and a strict security policy. The page can load files and send requests only to the site that serves it, so no data can leave for another site. Every file is listed with its SHA-256 hash in `secure/SHA256SUMS`. The Docker image serves this build.
+
+- Try it: https://arorasahil29.github.io/Miyar/secure/
+- Check the files: `cd secure && sha256sum -c SHA256SUMS`
+- Rebuild from source: `cd tools && npm ci && npm run build:secure`
+- For your security or compliance team: [SECURITY.md](SECURITY.md)
+
 ## Where data is kept
 
 - **With Miyar server:** reports, dataset details, users and the activity log are in your PostgreSQL database; dataset rows are in your storage (a Docker volume or an S3 bucket). Live data from SAP, Oracle, Databricks and others stays in those systems and is read through the gateway when someone loads or refreshes it.

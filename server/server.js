@@ -255,16 +255,30 @@ router.use((req, res, next) => {
 });
 router.use(authenticate);
 
-/* --- the web app --- */
-let appHtml = null;
+/* --- the web app ---
+   The secured build (secure/ in the repository) brings its own libraries and fonts in vendor/ and fonts/ next to
+   index.html; they are served from here, so the browser never needs another site. */
+const appDir = path.dirname(CFG.appFile);
+for (const dir of ['vendor', 'fonts']) router.use('/' + dir, express.static(path.join(appDir, dir), {fallthrough: false, index: false, maxAge: '7d', immutable: true}));
+let appHtml = null, appCsp = null;
+function loadApp(){
+  const html = fs.readFileSync(CFG.appFile, 'utf8');
+  const secure = /<meta name="miyar-build" content="secure">/.test(html);
+  // inline code is allowed only by its exact hash; 'unsafe-eval' is for calculated-field formulas, validated by the app first
+  const hashes = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => `'sha256-${crypto.createHash('sha256').update(m[1], 'utf8').digest('base64')}'`);
+  appCsp = (secure ? ["default-src 'none'", `script-src 'self' ${hashes.join(' ')} 'unsafe-eval'`, "style-src 'self' 'unsafe-inline'", "font-src 'self'",
+      "img-src 'self' data: blob:", "connect-src 'self'", "worker-src 'self' blob:", "manifest-src 'self'", "object-src 'none'"]
+    : ["default-src 'self'", "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com", "img-src 'self' data: blob:", "connect-src 'self' https:", "worker-src 'self' blob:"])
+    .concat(["frame-ancestors 'self'", "base-uri 'none'", "form-action 'self'"]).join('; ');
+  appHtml = html;
+}
 function serveApp(_req, res){
-  try { appHtml ||= fs.readFileSync(CFG.appFile); } catch { return res.status(500).send('The Miyar app file is missing. Set APP_FILE.'); }
+  try { if (!appHtml) loadApp(); } catch { return res.status(500).send('The Miyar app file is missing. Set APP_FILE.'); }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
-  // 'unsafe-eval' is needed for calculated-field formulas, which the app validates before compiling.
-  res.setHeader('Content-Security-Policy', ["default-src 'self'", "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", "font-src 'self' https://fonts.gstatic.com", "img-src 'self' data: blob:",
-    "connect-src 'self' https:", "worker-src 'self' blob:", "frame-ancestors 'self'", "base-uri 'self'", "form-action 'self'"].join('; '));
+  res.setHeader('Content-Security-Policy', appCsp);
+  res.setHeader('Referrer-Policy', 'no-referrer');
   res.send(appHtml);
 }
 router.get(['/', '/index.html'], serveApp);

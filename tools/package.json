@@ -1,0 +1,17 @@
+{
+  "name": "miyar-build-tools",
+  "private": true,
+  "description": "Builds the secured Miyar bundle: every library and font served locally, a strict Content-Security-Policy and a file manifest.",
+  "scripts": { "build:secure": "node build-secure.mjs" },
+  "devDependencies": {
+    "@fontsource/ibm-plex-mono": "5.0.13",
+    "@fontsource/ibm-plex-sans": "5.0.20",
+    "@fontsource/ibm-plex-sans-arabic": "5.0.20",
+    "@fontsource/space-grotesk": "5.0.18",
+    "echarts": "5.4.3",
+    "html2canvas": "1.4.1",
+    "jspdf": "2.5.1",
+    "pdfjs-dist": "3.11.174",
+    "xlsx": "0.18.5"
+  }
+}

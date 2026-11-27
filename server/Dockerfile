@@ -4,7 +4,8 @@ WORKDIR /app
 COPY server/package.json ./
 RUN npm install --omit=dev --no-audit --no-fund && npm cache clean --force
 COPY server/server.js server/schema.sql server/schema-2.sql ./
-COPY index.html ./public/index.html
+# the secured build: libraries and fonts included, nothing is loaded from other sites (rebuild with tools/: npm run build:secure)
+COPY secure/ ./public/
 RUN mkdir -p /data && chown node:node /data
 ENV PORT=8080 NODE_ENV=production DATA_DIR=/data
 EXPOSE 8080

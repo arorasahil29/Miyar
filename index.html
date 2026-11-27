@@ -499,7 +499,7 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
 
 <div id="app">
   <header class="top">
-    <div class="brand" title="Miyar · معيار">
+    <div class="brand" title="Miyar · معيار" id="brand">
       <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="12" width="5" height="10" rx="1.5" fill="var(--s1)"/><rect x="9.5" y="6" width="5" height="16" rx="1.5" fill="var(--accent)"/><rect x="17" y="2" width="5" height="20" rx="1.5" fill="var(--s3)"/></svg>
       Miyar <small lang="ar" dir="rtl" style="text-transform:none;letter-spacing:0;font-size:13px">معيار</small>
     </div>
@@ -576,6 +576,12 @@ const store = {
   set(v){ try { localStorage.setItem(LS_KEY, JSON.stringify(v)); return true; } catch { return false; } }
 };
 
+/* Version and build. The secured build (tools/build-secure.mjs) marks itself with <meta name="miyar-build" content="secure">,
+   serves every library and font from its own folder, and lists their SHA-384 hashes in #miyar-integrity. */
+const MIYAR_VERSION = '1.0.0';
+const SECURE = document.querySelector('meta[name="miyar-build"]')?.content === 'secure';
+const INTEGRITY = (() => { try { return JSON.parse(document.getElementById('miyar-integrity')?.textContent || '{}'); } catch { return {}; } })();
+const BUILD_LABEL = `Miyar ${MIYAR_VERSION}${SECURE ? ' · secured build' : ''}`;
 let EXPORTING = false;
 function rgba(hex, a){ const h = String(hex).trim().replace('#', ''); const f = h.length === 3 ? h.split('').map(c => c + c).join('') : h; const n = parseInt(f, 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
 const frame = () => new Promise(r => requestAnimationFrame(() => r()));
@@ -592,6 +598,7 @@ const libPromises = {};
 function loadLib(name){
   return libPromises[name] ||= LIBS[name].reduce((p, src) => p.then(() => new Promise((res, rej) => {
     const el = document.createElement('script'); el.src = src; el.onload = res;
+    if (INTEGRITY[src]) el.integrity = INTEGRITY[src];   // the browser refuses a file whose hash does not match
     el.onerror = () => { delete libPromises[name]; rej(new Error(`the ${name} library did not load. Check your connection and try again.`)); };
     document.head.append(el);
   })), Promise.resolve());
@@ -1753,8 +1760,9 @@ function welcomeHtml(){
   let head, body;
   if (W.step === 'connect'){
     head = ['Connect to a data source', 'Pick where your data lives. Miyar reads it through Miyar Gateway, which keeps passwords on your side and runs read-only queries.'];
-    const groups = [...new Set(CONNECTORS.map(x => x.g))];
-    body = groups.map(g => `<div class="conn-g">${esc(g)}</div><div class="conn-grid">${CONNECTORS.filter(x => x.g === g).map(x =>
+    const usable = CONNECTORS.filter(x => !(SECURE && x.mode === 'web'));
+    const groups = [...new Set(usable.map(x => x.g))];
+    body = groups.map(g => `<div class="conn-g">${esc(g)}</div><div class="conn-grid">${usable.filter(x => x.g === g).map(x =>
       `<button class="conn" type="button" data-c="${x.id}"><span class="mono ${x.cls}">${esc(x.m)}</span><span style="min-width:0"><b>${esc(x.name)}</b><small>${x.mode === 'web' ? 'No gateway needed' : 'Through the gateway'}</small></span></button>`).join('')}</div>`).join('')
       + (IN_CLAUDE ? '<p class="hint" style="font-size:12px">Live connections work in the self-hosted version of Miyar. Here you can see how each one is set up.</p>' : '')
       + `<div class="sheet-actions"><button class="btn" type="button" data-w="back">← Back</button></div>`;
@@ -2835,6 +2843,7 @@ function drawGwState(){ const el = $('#gwState'); if (el){ el.className = 'state
 function renderSources(body){
   SRC.sel = SRC.want || null; SRC.want = null;
   body.innerHTML = `<p>Connect live data from SAP, Oracle, Databricks and other databases or cloud platforms. Miyar reaches them through <b>Miyar Gateway</b>, a small open-source service you run next to your data, on a server, in Docker or in the cloud. The gateway keeps the passwords and runs read-only queries; the browser never sees credentials.</p>
+    ${SECURE && !SRV.on ? `<p class="err">This is the secured build, which is not allowed to contact other servers. Live data sources work when Miyar runs on your organisation's Miyar server, which connects to the gateway for you. Files still work from <b>Import data</b>.</p>` : ''}
     ${IN_CLAUDE ? `<p class="err">Live connections work only in the self-hosted version of Miyar (for example on GitHub Pages or your own server). Inside Claude, pages cannot reach other servers. Files still work from <b>Import data</b>.</p>` : ''}
     ${SRV.on ? `<div class="gw"><h4>Gateway</h4><span id="gwState" class="state"></span><p class="hint" style="margin:8px 0 0;font-size:12px">${SRV.cfg.gateway ? 'Connected through the Miyar server. Your administrator sets up the data connections on the gateway.' : 'No gateway is set up on this Miyar server yet. An administrator can add one with GATEWAY_URL and GATEWAY_KEY.'}</p></div>` : `<div class="gw"><h4>Gateway</h4>
       <div class="form-row"><input type="url" id="gwUrl" placeholder="https://gateway.example.com" value="${esc(GW.url)}" aria-label="Gateway address" ${IN_CLAUDE ? 'disabled' : ''}>
@@ -2851,7 +2860,8 @@ function renderSources(body){
     connectGateway();
   };
   drawSrc();
-  if (GW.url && SRC.state === 'idle' && !IN_CLAUDE) connectGateway();
+  if (SECURE){ $$('#gwUrl, #gwKey, #gwGo').forEach(x => x.disabled = true); }
+  if (GW.url && SRC.state === 'idle' && !IN_CLAUDE && !SECURE) connectGateway();
 }
 function drawSrc(){
   const box = $('#srcBody'); if (!box) return;
@@ -3100,7 +3110,7 @@ function openReport(){
     <div class="dlg-b"><p>Your report saves automatically in this browser. To move it elsewhere, copy the report definition below (pages, visuals, calculated fields and formats; data is not included) and paste it into Miyar on another device.</p>
     <textarea class="code" id="rJson" spellcheck="false">${esc(json)}</textarea>
     <div class="form-row" style="margin-top:8px"><button class="btn" id="rCopy" type="button">Copy definition</button><button class="btn primary" id="rLoad" type="button">Load pasted definition</button><span style="flex:1"></span>${SRV.on ? '' : '<button class="btn danger" id="rReset" type="button">Start over with no data</button>'}</div>
-    <div id="rMsg"></div></div>`, 'small');
+    <div id="rMsg"></div><p class="hint" style="margin:14px 0 0;font-size:12px">${esc(BUILD_LABEL)}</p></div>`, 'small');
   dlg.querySelector('[data-x]').onclick = closeModal;
   $('#rCopy').onclick = () => { const ta = $('#rJson'); navigator.clipboard?.writeText(ta.value).then(() => { $('#rMsg').className = 'ok'; $('#rMsg').textContent = 'Copied.'; }, () => { ta.select(); $('#rMsg').className = 'hint'; $('#rMsg').textContent = 'Press Ctrl+C or ⌘C to copy the selected text.'; }) ?? (ta.select()); };
   $('#rLoad').onclick = () => {
@@ -4399,6 +4409,7 @@ async function boot(){
 }
 window.addEventListener('beforeunload', e => { if (SRV.on && canEdit() && ($('#syncState')?.textContent || '').match(/Unsaved|Saving|Not saved/)){ e.preventDefault(); e.returnValue = ''; } });
 
+$('#brand').title = `${BUILD_LABEL} · معيار`;
 applyTheme();
 boot();
 </script>
