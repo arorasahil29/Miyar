@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-rKA4GWiZsJZctri/AGAEvPjMgcuTglvU1WxXPi27yHs=' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-9C2V+93xSaFk1WlOlJfxeQRPgCNVwNOnMfFqEo9OLPQ=' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Miyar · معيار. A self-service business intelligence app.">
@@ -651,7 +651,7 @@ const store = {
 
 /* Version and build. The secured build (tools/build-secure.mjs) marks itself with <meta name="miyar-build" content="secure">,
    serves every library and font from its own folder, and lists their SHA-384 hashes in #miyar-integrity. */
-const MIYAR_VERSION = '1.3.0';
+const MIYAR_VERSION = '1.3.1';
 const SECURE = document.querySelector('meta[name="miyar-build"]')?.content === 'secure';
 const INTEGRITY = (() => { try { return JSON.parse(document.getElementById('miyar-integrity')?.textContent || '{}'); } catch { return {}; } })();
 const BUILD_LABEL = `Miyar ${MIYAR_VERSION}${SECURE ? ' · secured build' : ''}`;
@@ -777,14 +777,12 @@ const SAMPLE_FMT = {'Discount':'percent', 'Units':'number'};
 const ATT_NAME = 'Sample: Employee Attendance';
 function makeAttendance(){
   const rng = mulberry32(20260101);
+  // 18 employees, named by number: three per department
   const P = [
-    ['Ahmed Al-Harbi','Finance','Riyadh'], ['Sara Al-Qahtani','Human Resources','Riyadh'], ['Omar Khan','IT','Riyadh'], ['Fatima Al-Zahrani','Sales','Jeddah'],
-    ['John Mathews','Operations','Dammam'], ['Priya Nair','IT','Riyadh'], ['Khalid Al-Otaibi','Sales','Riyadh'], ['Noura Al-Dosari','Customer Service','Jeddah'],
-    ['Rahul Sharma','Finance','Riyadh'], ['Lina Haddad','Human Resources','Jeddah'], ['Yousef Al-Shehri','Operations','Dammam'], ['Maria Santos','Customer Service','Riyadh'],
-    ['Faisal Al-Mutairi','Sales','Dammam'], ['Huda Al-Ghamdi','IT','Jeddah'], ['David Chen','Finance','Riyadh'], ['Reem Al-Anazi','Customer Service','Riyadh'],
-    ['Hassan Ali','Operations','Riyadh'], ['Aisha Siddiqui','Sales','Jeddah'], ['Mohammed Al-Shammari','Operations','Dammam'], ['Anita George','IT','Riyadh'],
-    ['Saleh Al-Juhani','Customer Service','Jeddah'], ['Dana Al-Rashid','Finance','Jeddah'], ['Imran Qureshi','Sales','Riyadh'], ['Mona Farouk','Human Resources','Riyadh'],
-  ].map(([name, dept, loc], i) => ({id: 'EMP-' + (1001 + i), name, dept, loc,
+    ['Finance','Riyadh'], ['Human Resources','Riyadh'], ['IT','Riyadh'], ['Sales','Jeddah'], ['Operations','Dammam'], ['Customer Service','Jeddah'],
+    ['Finance','Jeddah'], ['Human Resources','Jeddah'], ['IT','Riyadh'], ['Sales','Riyadh'], ['Operations','Riyadh'], ['Customer Service','Riyadh'],
+    ['Finance','Riyadh'], ['Human Resources','Riyadh'], ['IT','Jeddah'], ['Sales','Dammam'], ['Operations','Dammam'], ['Customer Service','Riyadh'],
+  ].map(([dept, loc], i) => ({id: 'EMP-' + (1001 + i), name: 'Employee ' + String(i + 1).padStart(2, '0'), dept, loc,
     absent: 0.008 + rng() * 0.035, late: 0.03 + Math.pow(rng(), 2) * 0.22, remote: ['IT', 'Finance'].includes(dept) ? 0.08 + rng() * 0.12 : rng() * 0.03, sick: 0.006 + rng() * 0.015}));
   const holidays = new Set(['2026-02-22', '2026-03-19', '2026-03-22', '2026-03-23', '2026-03-24', '2026-05-26', '2026-05-27', '2026-05-28', '2026-05-31', '2026-09-23']);
   const days = [];
@@ -865,7 +863,7 @@ function attendanceReport(){
     V('table', {title: 'Employee summary', dims: ['Employee Name', 'Department', 'Location'], measures: [M('Attendance %'), M('Days Present'), M('Absences'), M('Leave Days'), M('Late Arrivals'), M('Punctuality %')], bars: true, clickAction: detail.id, w: 12, h: 7}),
   ]};
   const forecast = {id: uid(), name: 'Forecast & what-if', kind: 'forecast', ds: ATT_NAME, visuals: [],
-    fc: {...FC_DEF, measure: 'Attendance %', people: ['Omar Khan', 'Priya Nair'], extra: 3}};
+    fc: {...FC_DEF, measure: 'Attendance %', people: ['Employee 03', 'Employee 09'], extra: 3}};
   return [overview, detail, forecast];
 }
 function loadAttendanceSample(){
@@ -4073,6 +4071,9 @@ function parseQuestion(q){
   found.sort((a, b) => b.len - a.len);
   const used = [];
   Q.values = found.filter(x => { const n = norm(x.v); if (used.some(u => u.includes(n))) return false; used.push(n); return true; });
+  // a breakdown named only by words that are part of a value ("Employee" in "Employee 05") is not asked for
+  const valWords = new Set(Q.values.flatMap(x => norm(x.v).split(' ')));
+  if (valWords.size) Q.dims = dims.filter(x => ![...x.hit].every(w => valWords.has(w.startsWith('§') ? w.slice(1) : w))).map(x => x.f.name);
   // dates: years, quarters, months
   const date = FIELDS.find(f => f.type === 'date')?.name;
   Q.date = date;
