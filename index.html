@@ -270,6 +270,40 @@ body.exporting .fc-what{grid-template-columns:260px minmax(0,1fr)!important}
 #chgDate{padding:4px 7px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit}
 .chg-foot{margin:18px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3);line-height:1.5}
 @media (max-width:820px){ .chg-save input{width:120px} }
+/* detailed report */
+.canvas.det-mode{display:block}
+.kpi .v,.mcard .v{cursor:zoom-in}
+.kpi .v:hover,.mcard .v:hover,.grid td.num.dl:hover{text-decoration:underline dotted;text-underline-offset:4px}
+.grid td.num.dl{cursor:zoom-in}
+.det{display:flex;flex-direction:column;gap:10px;min-width:0}
+.det-head{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.det-title{flex:1;min-width:240px}
+.det-k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.det-title h2{font-family:var(--f-head);font-size:20px;font-weight:600;margin:2px 0 4px;color:var(--ink)}
+.det-title h2 b{font-family:var(--f-head);color:var(--accent);margin-left:6px}
+.det-title p{margin:0;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px}
+.det-title .chip{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:2px 4px 2px 10px;font-size:12px}
+.det-title .chip button{border:0;background:none;color:var(--ink2);cursor:pointer;font-size:14px;line-height:1;padding:0 4px}
+.det-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.det-bar input[type=search]{padding:6px 10px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);min-width:220px;flex:0 1 280px}
+.det-bar select{padding:5px 8px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);color:var(--ink)}
+.det-only{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2)}.det-only input{accent-color:var(--accent)}
+.det-n{margin-left:auto;font-size:12px;color:var(--ink2);font-family:var(--f-data)}
+.det-note{margin:0;font-size:12.5px;color:var(--ink2);border-left:3px solid var(--accent);padding:4px 10px}
+.det-wrap{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:calc(100vh - 340px);min-height:200px}
+.det-tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px}
+.det-tbl th{position:sticky;top:0;z-index:1;background:var(--raise);text-align:left;font-weight:600;color:var(--ink2);font-size:11.5px;padding:7px 10px;border-bottom:1px solid var(--line2);white-space:nowrap;cursor:pointer;user-select:none}
+.det-tbl td{padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.det-tbl tbody tr:hover td{background:var(--raise)}
+.det-tbl .n{text-align:right;font-family:var(--f-data);font-size:12px}
+.det-tbl .ix{color:var(--ink3);font-size:11px}
+.det-tbl .hl{background:var(--accent-soft)}
+.det-tbl th.hl{color:var(--ink)}
+.det-tbl tfoot td{position:sticky;bottom:0;background:var(--raise);font-weight:600;border-top:1px solid var(--line2);border-bottom:0}
+.det-tbl tr[data-gk]{cursor:pointer}
+.det-more{display:flex;gap:8px;align-items:center;justify-content:center;padding:8px}
+body.exporting .det-wrap{max-height:none}
+@media (max-width:820px){ .det-bar input[type=search]{min-width:0;flex:1 1 100%} .det-n{margin-left:0} .det-wrap{max-height:calc(100vh - 380px)} }
 /* slicer */
 .slicer{position:absolute;inset:4px 8px 8px;display:flex;flex-direction:column;gap:6px}
 .slicer input[type=search]{padding:4px 8px;border:1px solid var(--line2);border-radius:6px;background:var(--panel)}
@@ -651,7 +685,7 @@ const store = {
 
 /* Version and build. The secured build (tools/build-secure.mjs) marks itself with <meta name="miyar-build" content="secure">,
    serves every library and font from its own folder, and lists their SHA-384 hashes in #miyar-integrity. */
-const MIYAR_VERSION = '1.4.1';
+const MIYAR_VERSION = '1.5.0';
 const SECURE = document.querySelector('meta[name="miyar-build"]')?.content === 'secure';
 const INTEGRITY = (() => { try { return JSON.parse(document.getElementById('miyar-integrity')?.textContent || '{}'); } catch { return {}; } })();
 const BUILD_LABEL = `Miyar ${MIYAR_VERSION}${SECURE ? ' · secured build' : ''}`;
@@ -1612,7 +1646,7 @@ function gauge(v){
 
 function renderMulticard(v, body){
   const rows = rowsFor(v);
-  body.innerHTML = `<div class="mcard">${v.measures.map(m => { const x = measureVal(m, rows); return `<div><div class="v" title="${esc(fmtVal(x, m))}">${esc(fmtVal(x, m, Math.abs(x ?? 0) >= 1e5))}</div><div class="l" title="${esc(measureLabel(m))}">${esc(measureLabel(m))}</div></div>`; }).join('')}</div>`;
+  body.innerHTML = `<div class="mcard">${v.measures.map(m => { const x = measureVal(m, rows); return `<div><div class="v" title="${esc(fmtVal(x, m))} · click to see the rows behind it">${esc(fmtVal(x, m, Math.abs(x ?? 0) >= 1e5))}</div><div class="l" title="${esc(measureLabel(m))}">${esc(measureLabel(m))}</div></div>`; }).join('')}</div>`;
 }
 
 /* ============================== HTML visuals ============================== */
@@ -1620,7 +1654,7 @@ function renderKpi(v, body){
   const m = v.measures[0];
   const rows = rowsFor(v);
   const val = measureVal(m, rows);
-  let html = `<div class="kpi"><div class="v" title="${esc(fmtVal(val, m))}">${esc(fmtVal(val, m, Math.abs(val) >= 1e5))}</div><div class="d"><span>${esc(measureLabel(m))}</span>`;
+  let html = `<div class="kpi"><div class="v" title="${esc(fmtVal(val, m))} · click to see the rows behind it">${esc(fmtVal(val, m, Math.abs(val) >= 1e5))}</div><div class="d"><span>${esc(measureLabel(m))}</span>`;
   let trend = null;
   if (v.dims[0] && FMAP.has(v.dims[0])){
     const g = groupRows(rows, r => keyOf(r[v.dims[0]]));
@@ -1679,6 +1713,9 @@ function renderTable(v, body){
   h += `</tbody>${dims.length && ms.length ? `<tfoot><tr><td colspan="${dims.length}">Total${data.length > limit ? ` · first ${limit} of ${data.length.toLocaleString()} rows shown` : ''}</td>${totals.map((t, i) => `<td class="num">${esc(fmtVal(t, ms[i]))}</td>`).join('')}</tr></tfoot>` : ''}</table></div>`;
   body.innerHTML = h;
   $$('th', body).forEach(th => th.onclick = e => { e.stopPropagation(); const c = +th.dataset.c; if (v.tsort === c) v.tdir = -(v.tdir ?? -1); else { v.tsort = c; v.tdir = c < dims.length ? 1 : -1; } changed(); });
+  $$('tbody tr', body).forEach((tr, ri) => { const d = shown[ri]; $$('td.num', tr).forEach((td, mi) => { td.classList.add('dl'); td.title = 'See the rows behind this number';
+    td.onclick = e => { e.stopPropagation(); openDetail({vid: v.id, m: ms[mi], filters: dims.map((dd, i) => [dd, d.keys[i]])}); }; }); });
+  $$('tfoot td.num', body).forEach((td, mi) => { td.classList.add('dl'); td.title = 'See the rows behind this total'; td.onclick = e => { e.stopPropagation(); openDetail({vid: v.id, m: ms[mi]}); }; });
   if (own) $$('tbody tr', body).forEach(tr => {
     tr.onclick = e => { e.stopPropagation(); const multi = e.ctrlKey || e.metaKey || e.shiftKey, tg = clickTarget(v);
       if (tg && !multi) return goDetail(tg.id, [[own, tr.dataset.k]]); toggleSel(own, tr.dataset.k, multi); };
@@ -1706,6 +1743,9 @@ function renderMatrix(v, body, orig = v){
   }
   h += `</tbody><tfoot><tr><td>Total</td>${cks.map(ck => `<td class="num">${esc(fmtVal(measureVal(m, byCol.get(ck)), m))}</td>`).join('')}<td class="num">${esc(fmtVal(measureVal(m, rows), m))}</td></tr></tfoot></table></div>`;
   body.innerHTML = h;
+  const cellDetail = (td, filters) => { td.classList.add('dl'); td.title = 'See the rows behind this number'; td.onclick = e => { e.stopPropagation(); openDetail({vid: orig.id, m, filters}); }; };
+  $$('tbody tr', body).forEach(tr => $$('td.num', tr).forEach((td, ci) => cellDetail(td, ci < cks.length ? [[rd, tr.dataset.k], [cd, cks[ci]]] : [[rd, tr.dataset.k]])));
+  $$('tfoot td.num', body).forEach((td, ci) => cellDetail(td, ci < cks.length ? [[cd, cks[ci]]] : []));
   $$('tbody tr', body).forEach(tr => {
     tr.onclick = e => { e.stopPropagation(); const multi = e.ctrlKey || e.metaKey || e.shiftKey;
       if (orig.drillMode && canDrill(orig) && level(orig) < orig.dims.length - 1) return drillDown(orig, tr.dataset.k);
@@ -1854,7 +1894,7 @@ function openMenu(x, y, v, ev, filters){
     <button type="button" role="menuitem" data-m="filter">Filter the report to this value</button>
     ${deeper ? `<button type="button" role="menuitem" data-m="down">Drill down to ${esc(shortName(v.dims[L + 1]))}</button>` : ''}
     ${canDrill(v) && L ? `<button type="button" role="menuitem" data-m="up">Drill up</button>` : ''}
-    <button type="button" role="menuitem" data-m="rows">See the data rows</button>
+    <button type="button" role="menuitem" data-m="rows">Open detailed report</button>
     ${others.length ? `<hr><div class="h">Show details on</div>${others.map(pg => `<button type="button" role="menuitem" data-pg="${esc(pg.id)}">${esc(pg.name)}${pg.id === v.clickAction ? ' (default)' : ''}</button>`).join('')}` : ''}`;
   document.body.append(m);
   const r = m.getBoundingClientRect();
@@ -1868,7 +1908,7 @@ function openMenu(x, y, v, ev, filters){
     if (k === 'filter'){ S.sel = {...S.sel}; for (const [f, val] of filters){ S.sel[f] = new Set([val]); } renderAll(); }
     if (k === 'down') drillDown(v, filters[0][1]);
     if (k === 'up') drillUp(v);
-    if (k === 'rows') openData('table', all);
+    if (k === 'rows') openDetail({vid: v.id, m: (ev.measures || [])[0] || {f: RECORDS, agg: 'count'}, filters});
   });
   m.querySelector('button')?.focus();
 }
@@ -1903,6 +1943,14 @@ function applyGrid(el, v){ el.style.setProperty('--span', clamp(v.w || 4, 2, 12)
 function renderCanvas(){
   const cv = $('#canvas');
   const p = page();
+  if (DET && DET.pageId !== p.id) DET = null;
+  cv.classList.toggle('det-mode', !!DET);
+  if (DET){
+    for (const [id, c] of charts){ c.dispose(); charts.delete(id); }
+    cv.classList.remove('fc-mode');
+    return renderDetail(cv);
+  }
+  $('.det', cv)?.remove();
   cv.classList.toggle('fc-mode', p.kind === 'forecast');
   if (p.kind === 'forecast'){
     for (const [id, c] of charts){ c.dispose(); charts.delete(id); }
@@ -2087,7 +2135,8 @@ function blankStart(){
   loadReport(r); commit(); histButtons();
 }
 function renderTabs(){
-  $('#tabs').innerHTML = S.pages.map((p, i) => `<button class="tab ${i === S.pageIdx ? 'on' : ''}" data-i="${i}" type="button" title="Double-click to rename">${esc(p.name)}</button>${i === S.pageIdx && S.pages.length > 1 ? `<button class="tab-x" data-delpage="${i}" type="button" aria-label="Delete page ${esc(p.name)}" title="Delete this page">×</button>` : ''}`).join('') + `<button class="tab tab-add" id="addPage" type="button" aria-label="Add page" title="Add page">+</button>`;
+  $('#tabs').innerHTML = S.pages.map((p, i) => `<button class="tab ${i === S.pageIdx && !DET ? 'on' : ''}" data-i="${i}" type="button" title="Double-click to rename">${esc(p.name)}</button>${i === S.pageIdx && S.pages.length > 1 ? `<button class="tab-x" data-delpage="${i}" type="button" aria-label="Delete page ${esc(p.name)}" title="Delete this page">×</button>` : ''}`).join('') + (DET ? `<button class="tab on" type="button" data-det="1" title="Detailed report">Details: ${esc(detLabel())}</button><button class="tab-x" data-closedet="1" type="button" aria-label="Close the detailed report" title="Close (Esc)">×</button>` : '')
+    + `<button class="tab tab-add" id="addPage" type="button" aria-label="Add page" title="Add page">+</button>`;
 }
 function renderSelbar(){
   const entries = Object.entries(S.sel).filter(([, s]) => s.size);
@@ -2593,10 +2642,20 @@ B.addEventListener('drop', e => {
 });
 
 // tabs
+$('#canvas').addEventListener('click', e => {
+  const v0 = e.target.closest('.kpi .v, .mcard .v'); if (!v0) return;
+  const card = v0.closest('.card'), v = card && findVisual(card.dataset.id); if (!v || missingFields(v).length) return;
+  e.stopPropagation();
+  const m = v.type === 'kpi' ? v.measures[0] : v.measures[[...v0.parentElement.parentElement.children].indexOf(v0.parentElement)];
+  if (m) openDetail({vid: v.id, m, title: v.type === 'kpi' && v.title ? v.title : null});
+}, true);
 $('#tabs').addEventListener('click', e => {
+  if (e.target.closest('[data-closedet]')) return closeDetail();
+  if (e.target.closest('[data-det]')) return;
   const del = e.target.closest('[data-delpage]'); if (del) return deletePage(+del.dataset.delpage);
   if (e.target.id === 'addPage'){ S.pages.push({id: uid(), name: 'Page ' + (S.pages.length + 1), ds: S.active || undefined, visuals: []}); S.pageIdx = S.pages.length - 1; S.selected = null; return renderAll(); }
-  const i = e.target.closest('.tab')?.dataset.i; if (i == null || +i === S.pageIdx) return;
+  const i = e.target.closest('.tab')?.dataset.i; if (i == null) return;
+  if (+i === S.pageIdx){ if (DET) closeDetail(); return; }
   S.pageIdx = +i; S.selected = null; renderAll();
 });
 $('#tabs').addEventListener('dblclick', e => {
@@ -3290,6 +3349,7 @@ async function exportPDF(idxs, light, progress){
   const pdf = new jsPDF({orientation:'landscape', unit:'pt', format:'a4', compress: true});
   const W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight(), M = 28;
   const keep = {page: S.pageIdx, sel: S.selected, scroll: $('#canvasWrap').scrollTop};
+  const keepDet = DET; DET = null;
   EXPORTING = true; S.selected = null; document.body.classList.add('exporting');
   if (light) document.documentElement.setAttribute('data-theme', 'light');
   let sheet = 0;
@@ -3322,7 +3382,7 @@ async function exportPDF(idxs, light, progress){
   } finally {
     EXPORTING = false; document.body.classList.remove('exporting');
     applyTheme();
-    S.pageIdx = keep.page; S.selected = keep.sel; colorCache.clear(); renderAll();
+    S.pageIdx = keep.page; S.selected = keep.sel; DET = keepDet; colorCache.clear(); renderAll();
     $('#canvasWrap').scrollTop = keep.scroll;
   }
   return {name: fileBase() + '.pdf', blob: pdf.output('blob')};
@@ -4124,6 +4184,131 @@ function seedAttendanceSnapshot(){
   if (!S.reportId || S.active !== ATT_NAME || snapStore.list(S.reportId).length) return;
   saveSnapshot('Sample: the report on 1 Oct 2026, before October’s data', false, Date.UTC(2026, 9, 1, 6, 0), r => r.Date <= '2026-09-30');
 }
+
+/* ============================== detailed report ==============================
+   Clicking a number (a card's figure, a table or matrix cell, a total, or "Open detailed report" on a chart) opens
+   the rows behind that number as a tabular report in place of the page: the figure and its context at the top,
+   then every row with search, sorting, grouping, a switch between rows that count towards the number and all rows
+   in its context, and export to Excel. Back (or Esc) returns to the page. */
+let DET = null;
+function openDetail(o){
+  const m = o.m || {f: RECORDS, agg: 'count'};
+  DET = {pageId: page().id, vid: o.vid || null, m, filters: (o.filters || []).filter(f => f && f[1] != null && FMAP.has(f[0])), extra: [], title: o.title || null,
+    group: null, q: '', sort: null, limit: 200, only: true};
+  closeMenu(); hideTips(); S.selected = null;
+  renderTabs(); renderCanvas(); renderBuild(); $('#canvasWrap').scrollTop = 0;
+}
+function closeDetail(){ if (!DET) return; DET = null; renderTabs(); renderCanvas(); renderBuild(); }
+/* the rows in the number's context: as the visual saw them, narrowed to the clicked cell */
+function detContext(){
+  const v = DET.vid && findVisual(DET.vid);
+  const base = v ? rowsFor(effective(v)) : globalRows(), f = [...DET.filters, ...DET.extra];
+  return f.length ? base.filter(r => f.every(([k, val]) => keyOf(r[k]) === val)) : base;
+}
+function detCounts(m){
+  if (m.f === RECORDS) return null;
+  const fd = FMAP.get(m.f); if (!fd) return null;
+  if (fd.src === 'calc' && fd.calcKind !== 'row') return null;            // a ratio like Attendance % is worked out from all the rows
+  if (m.agg === 'sum') return r => r[m.f] != null && r[m.f] !== '' && +r[m.f] !== 0;
+  return r => r[m.f] != null && r[m.f] !== '';
+}
+function detColumns(m){
+  const cols = FIELDS.filter(f => f.src === 'col' || (f.src === 'calc' && f.calcKind === 'row'));
+  const used = new Set();
+  if (m.f !== RECORDS){
+    const fd = FMAP.get(m.f);
+    const walk = (name, depth) => { const c = calcs().find(x => x.name === name); for (const x of (c?.expr || '').matchAll(/\[([^\]]+)\]/g)){ used.add(x[1]); if (depth < 2) walk(x[1], depth + 1); } };
+    if (fd?.src === 'calc') walk(m.f, 0);
+    if (!(fd?.src === 'calc' && fd.calcKind !== 'row')) used.add(m.f);
+  }
+  const num = f => f.type === 'number';
+  const order = [...cols.filter(f => f.type === 'date'), ...cols.filter(f => !num(f) && f.type !== 'date'), ...cols.filter(f => num(f) && used.has(f.name)), ...cols.filter(f => num(f) && !used.has(f.name))];
+  return {cols: order.map(f => f.name), used, num: new Set(cols.filter(num).map(f => f.name))};
+}
+function detView(){
+  const ctx = detContext(), m = DET.m, keep = detCounts(m);
+  let rows = DET.only && keep ? ctx.filter(keep) : ctx;
+  const {cols, used, num} = detColumns(m);
+  if (DET.q){ const q = DET.q.toLowerCase(); rows = rows.filter(r => cols.some(c => r[c] != null && String(r[c]).toLowerCase().includes(q))); }
+  if (DET.sort){ const {c, dir} = DET.sort, isN = num.has(c); rows = [...rows].sort((a, b) => (isN ? (a[c] ?? -Infinity) - (b[c] ?? -Infinity) : labelCmp(keyOf(a[c]), keyOf(b[c]))) * dir); }
+  return {ctx, rows, cols, used, num, keep, value: measureVal(m, ctx)};
+}
+const detLabel = () => DET.title || (DET.m.f === RECORDS ? 'Rows' : measureLabel(DET.m));
+function renderDetail(cv){
+  const X = detView(), m = DET.m, from = page();
+  const date = fcDate(), groups = [...FIELDS.filter(f => f.src === 'col' && f.role === 'dim' && f.type === 'string').map(f => f.name), ...(date ? [`${date} (Month)`, `${date} (Year)`] : [])];
+  const sel = Object.entries(S.sel).filter(([, x]) => x.size);
+  const chips = [...DET.filters.map((f, i) => ({f, k: 'f' + i})), ...DET.extra.map((f, i) => ({f, k: 'e' + i}))];
+  const fd = FMAP.get(m.f), ratio = fd?.src === 'calc' && fd.calcKind !== 'row';
+  cv.innerHTML = `<div class="det">
+    <div class="det-head">
+      <button class="btn sm" type="button" id="detBack" title="Back to the page (Esc)">← Back to ${esc(from.name)}</button>
+      <div class="det-title"><span class="det-k">Detailed report</span><h2>${esc(detLabel())} <b>${esc(fmtVal(X.value, m))}</b></h2>
+        <p>${chips.length ? chips.map(c => `<span class="chip">${esc(shortName(c.f[0]))}: <b>${esc(c.f[1])}</b><button type="button" data-rmf="${c.k}" aria-label="Remove ${esc(c.f[1])}" title="Remove this condition">×</button></span>`).join(' ') : '<span class="hint">All rows in view</span>'}
+        ${sel.length ? `<span class="hint">· report filters: ${esc(sel.map(([f, x]) => `${shortName(f)} = ${[...x].slice(0, 3).join(', ')}${x.size > 3 ? '…' : ''}`).join('; '))}</span>` : ''}</p></div>
+    </div>
+    <div class="det-bar">
+      <input type="search" id="detQ" placeholder="Search these rows" value="${esc(DET.q)}" aria-label="Search the rows">
+      <label class="fc-inline">Group by <select id="detG"><option value="">No grouping</option>${groups.map(g => `<option value="${esc(g)}" ${DET.group === g ? 'selected' : ''}>${esc(shortName(g) === g ? g : `${shortName(FMAP.get(g)?.base || g)} · ${FMAP.get(g)?.part}`)}</option>`).join('')}</select></label>
+      ${X.keep ? `<label class="det-only"><input type="checkbox" id="detOnly" ${DET.only ? 'checked' : ''}> Only rows that count towards this number</label>` : ''}
+      <span class="det-n" id="detN"></span>
+      <button class="btn sm" type="button" id="detX">Export to Excel</button>
+    </div>
+    ${ratio ? `<p class="det-note">${esc(m.f)} is worked out from ${[...X.used].filter(u => FMAP.has(u)).map(u => `<b>${esc(u)}</b>`).join(', ') || 'these rows'} across all ${X.ctx.length.toLocaleString()} rows below; those columns are highlighted.</p>` : ''}
+    <div id="detT"></div>
+  </div>`;
+  detTable();
+  $('#detBack').onclick = closeDetail;
+  $('#detQ').oninput = e => { DET.q = e.target.value; DET.limit = 200; detTable(); };
+  $('#detG').onchange = e => { DET.group = e.target.value || null; detTable(); };
+  $('#detOnly')?.addEventListener('change', e => { DET.only = e.target.checked; DET.limit = 200; detTable(); });
+  $('#detX').onclick = detExport;
+  $$('[data-rmf]', cv).forEach(b => b.onclick = () => { const k = b.dataset.rmf, i = +k.slice(1); (k[0] === 'f' ? DET.filters : DET.extra).splice(i, 1); renderCanvas(); });
+}
+function detTable(){
+  const box = $('#detT'); if (!box) return;
+  const X = detView(), m = DET.m, n = $('#detN');
+  if (DET.group && FMAP.has(DET.group)){
+    const g = groupRows(X.rows, r => keyOf(r[DET.group])), add = additive(m), tot = measureVal(m, X.rows);
+    const list = [...g].map(([k, rs]) => ({k, n: rs.length, v: measureVal(m, rs)})).sort((a, b) => (b.v ?? -Infinity) - (a.v ?? -Infinity));
+    n.textContent = `${list.length.toLocaleString()} groups · ${X.rows.length.toLocaleString()} rows`;
+    box.innerHTML = `<div class="det-wrap"><table class="det-tbl"><thead><tr><th>${esc(shortName(DET.group))}</th><th class="n">Rows</th><th class="n hl">${esc(detLabel())}</th>${add ? '<th class="n">Share</th>' : ''}</tr></thead><tbody>${
+      list.map(x => `<tr data-gk="${esc(x.k)}" title="Show the rows for ${esc(x.k)}"><td><span class="linkbtn">${esc(x.k)}</span></td><td class="n">${x.n.toLocaleString()}</td><td class="n hl"><b>${esc(fmtVal(x.v, m))}</b></td>${add ? `<td class="n">${tot ? ((x.v || 0) / tot * 100).toFixed(1) + '%' : '–'}</td>` : ''}</tr>`).join('')
+    }</tbody><tfoot><tr><td>Total</td><td class="n">${X.rows.length.toLocaleString()}</td><td class="n hl">${esc(fmtVal(tot, m))}</td>${add ? '<td class="n">100%</td>' : ''}</tr></tfoot></table></div>`;
+    $$('tr[data-gk]', box).forEach(tr => tr.onclick = () => { DET.extra.push([DET.group, tr.dataset.gk]); DET.group = null; renderCanvas(); });
+    return;
+  }
+  const shown = X.rows.slice(0, DET.limit), cell = (r, c) => { const x = r[c]; if (x == null || x === '') return '<span class="hint">–</span>'; return X.num.has(c) ? esc(fmtVal(x, {f: c, agg: 'sum'})) : esc(x); };
+  const sums = X.cols.map(c => X.num.has(c) && fmtKind({f: c, agg: 'sum'}) !== 'percent' && !/(^|\s)(id|code|no|number|year)$/i.test(c) ? X.rows.reduce((t, r) => t + (+r[c] || 0), 0) : null);
+  const arrow = c => DET.sort?.c === c ? (DET.sort.dir > 0 ? ' ↑' : ' ↓') : '';
+  n.textContent = X.keep && DET.only && X.rows.length !== X.ctx.length && !DET.q ? `${X.rows.length.toLocaleString()} of ${X.ctx.length.toLocaleString()} rows count towards it` : `${X.rows.length.toLocaleString()} row${X.rows.length === 1 ? '' : 's'}`;
+  box.innerHTML = X.rows.length ? `<div class="det-wrap"><table class="det-tbl"><thead><tr><th class="n">#</th>${X.cols.map(c => `<th class="${X.num.has(c) ? 'n' : ''} ${X.used.has(c) ? 'hl' : ''}" data-sc="${esc(c)}">${esc(c)}${arrow(c)}</th>`).join('')}</tr></thead><tbody>${
+    shown.map((r, i) => `<tr><td class="n ix">${i + 1}</td>${X.cols.map(c => `<td class="${X.num.has(c) ? 'n' : ''} ${X.used.has(c) ? 'hl' : ''}">${cell(r, c)}</td>`).join('')}</tr>`).join('')
+  }</tbody><tfoot><tr><td></td>${X.cols.map((c, i) => `<td class="${X.num.has(c) ? 'n' : ''} ${X.used.has(c) ? 'hl' : ''}">${i === 0 ? 'Total' : sums[i] != null ? esc(fmtVal(sums[i], {f: c, agg: 'sum'})) : ''}</td>`).join('')}</tr></tfoot></table></div>
+    ${X.rows.length > DET.limit ? `<div class="det-more"><span class="hint">Showing ${DET.limit.toLocaleString()} of ${X.rows.length.toLocaleString()} rows.</span> <button class="btn sm" type="button" id="detMore">Show ${Math.min(200, X.rows.length - DET.limit)} more</button> <button class="btn sm ghost" type="button" id="detAll">Show all</button></div>` : ''}`
+    : `<div class="chg-empty"><p><b>No rows match.</b></p><p class="hint">${DET.q ? 'Try a different search.' : 'Nothing in this context counts towards the number.'}</p></div>`;
+  $$('th[data-sc]', box).forEach(th => th.onclick = () => { const c = th.dataset.sc; DET.sort = DET.sort?.c === c ? {c, dir: -DET.sort.dir} : {c, dir: X.num.has(c) ? -1 : 1}; detTable(); });
+  $('#detMore')?.addEventListener('click', () => { DET.limit += 200; detTable(); });
+  $('#detAll')?.addEventListener('click', () => { DET.limit = Infinity; detTable(); });
+}
+async function detExport(){
+  try {
+    await loadLib('xlsx');
+    const X = detView(), m = DET.m;
+    let aoa;
+    if (DET.group && FMAP.has(DET.group)){
+      const g = groupRows(X.rows, r => keyOf(r[DET.group]));
+      aoa = [[DET.group, 'Rows', detLabel()], ...[...g].map(([k, rs]) => [k, rs.length, measureVal(m, rs)]).sort((a, b) => (b[2] ?? 0) - (a[2] ?? 0))];
+    } else aoa = [X.cols, ...X.rows.map(r => X.cols.map(c => r[c] ?? ''))];
+    const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = aoa[0].map((h, i) => ({wch: clamp(Math.max(String(h).length, ...aoa.slice(1, 200).map(r => String(r[i] ?? '').length)) + 2, 8, 40)}));
+    const about = [['Miyar detailed report'], [], ['Figure', detLabel()], ['Value', fmtVal(X.value, m)], ['Conditions', [...DET.filters, ...DET.extra].map(([f, v]) => `${f} = ${v}`).join('; ') || 'None'], ['Report filters', selText()], ['Search', DET.q || 'None'], ['Rows', X.rows.length], ['Exported', new Date().toLocaleString()]];
+    XLSX.utils.book_append_sheet(wb, ws, 'Details'); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(about), 'About');
+    const out = XLSX.write(wb, {bookType: 'xlsx', type: 'array'});
+    await saveFile(`${detLabel().replace(/[\\/:*?"<>|%]+/g, ' ').trim()} details ${isoDay(Date.now())}.xlsx`, new Blob([out], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  } catch (e){ toast('Could not export: ' + (e.message || e)); }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && DET && !$('#modalRoot').innerHTML && !$('.ctx') && !e.target.closest('input, textarea, select')) closeDetail(); });
 
 /* ============================== default report ============================== */
 function sampleReport(){
