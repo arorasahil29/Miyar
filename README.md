@@ -20,6 +20,8 @@ It needs an internet connection the first time, to load these libraries from cdn
 - Import Excel, PDF tables, CSV/TSV, JSON and HTML tables, with a preview before loading
 - 27 visual types: charts, KPI cards, tables, matrix, slicers, gauges, Sankey diagrams, calendar heatmaps and more
 - **Ask Sahil**: a built-in assistant that answers questions about the data in English or Arabic, with charts
+- **Forecast & what-if**: projects any measure for the next 3, 6 or 12 months with a likely range, and plans "what if" changes, such as people taking more leave and its effect on days worked, team and department availability, and leave allowances
+- **Employee attendance sample**: opens on first start, with a multi-select employee filter
 - Company sign-in (Microsoft Entra ID, Google, Okta, Keycloak or any OpenID Connect provider), shared reports, roles and an activity log with **Miyar server**. See [server/README.md](server/README.md)
 - Live data sources through **Miyar Gateway**: SAP HANA, SAP S/4HANA and BW (OData), Oracle, Databricks, Snowflake, BigQuery, SQL Server, Azure Synapse, PostgreSQL, Redshift, MySQL and OData feeds. See [gateway/README.md](gateway/README.md)
 - Cross-filtering, drill-down hierarchies, drill-through detail pages, calculated fields
