@@ -19,7 +19,7 @@ It needs an internet connection the first time, to load these libraries from cdn
 
 - Import Excel, PDF tables, CSV/TSV, JSON and HTML tables, with a preview before loading
 - 27 visual types: charts, KPI cards, tables, matrix, slicers, gauges, Sankey diagrams, calendar heatmaps and more
-- **Ask Sahil**: a built-in assistant that answers questions about the data in English or Arabic, with charts
+- **Ask Sahil**: a built-in assistant that answers questions about the data in English or Arabic, with charts; a bubble in the corner shows an example question from the current report, and clicking it asks it
 - **Forecast & what-if**: projects any measure for the next 3, 6 or 12 months with a likely range, and plans "what if" changes, such as people taking more leave and its effect on days worked, team and department availability, and leave allowances
 - **Highlights**: a moving strip of insights the cards don't show: the biggest movers, recent months against earlier ones, streaks and records, best and weakest against the average, concentration, your selection against everyone, and next month's forecast. Click one to filter the report
 - **What changed since last time**: Miyar saves a snapshot of each report's figures the first time you open it each day, and you can save named ones before a meeting. The **Changes** button compares the report now with any snapshot, or with a date picked from a calendar (the snapshot from that day, or the report rebuilt from the rows dated up to it): new data, headline figures, biggest moves, where changes came from, corrections to earlier months, and new or missing people or items. Snapshots stay in the browser and hold figures only, never rows

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-LIvtbV6X4uvK2KZ1nEFfNMHBFTn8nd1FykY6ek+wx3g=' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MrP6bwtlpp0+LG9YbfPvqBCLiO9za21fVaxdcLonHL0=' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Miyar · معيار. A self-service business intelligence app.">
@@ -419,7 +419,27 @@ pre.snip{font-family:var(--f-data);font-size:12px;background:var(--raise);border
 .src textarea.code{min-height:110px}
 .ds-refresh{width:100%;margin:-2px 0 8px}
 /* ask your data */
-.btn.ask{color:var(--accent);border-color:var(--accent)}
+.btn.ask{color:#fff;border-color:transparent;background:linear-gradient(135deg,var(--accent),var(--s3));box-shadow:0 2px 10px rgba(51,70,211,.28);font-weight:600}
+.btn.ask:hover{filter:brightness(1.08)}
+.btn.ask .spark-i{font-size:11px;margin-left:-2px;opacity:.95}
+/* the Ask Sahil bubble: a rotating example question from the current report */
+#sahilFab{position:fixed;right:20px;bottom:20px;z-index:60;display:flex;align-items:stretch;max-width:min(380px,calc(100vw - 40px));background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:0 8px 28px rgba(20,28,45,.18);animation:fabin .4s ease-out}
+#sahilFab[hidden]{display:none}
+#sahilFab .fab-main{display:flex;align-items:center;gap:10px;border:0;background:none;padding:7px 8px 7px 7px;cursor:pointer;text-align:left;min-width:0;color:var(--ink);font:inherit}
+#sahilFab .sahil-av{width:34px;height:34px;box-shadow:0 0 0 0 rgba(51,70,211,.45);animation:fabpulse 2.6s ease-out 3}
+#sahilFab .fab-t{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+#sahilFab .fab-t b{font-family:var(--f-head);font-size:13px;font-weight:600}
+#sahilFab .fab-q{font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;transition:opacity .35s}
+#sahilFab .fab-q.out{opacity:0}
+#sahilFab .fab-q:hover{color:var(--accent);text-decoration:underline}
+#sahilFab .fab-x{border:0;background:none;color:var(--ink3);font-size:16px;padding:0 14px 0 4px;cursor:pointer}
+#sahilFab .fab-x:hover{color:var(--ink)}
+@keyframes fabin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes fabpulse{0%{box-shadow:0 0 0 0 rgba(51,70,211,.45)}70%{box-shadow:0 0 0 12px rgba(51,70,211,0)}100%{box-shadow:0 0 0 0 rgba(51,70,211,0)}}
+@media (prefers-reduced-motion:reduce){ #sahilFab,#sahilFab .sahil-av{animation:none} #sahilFab .fab-q{transition:none} }
+body.exporting #sahilFab{display:none}
+.mnav [data-m="ask"]{color:var(--accent);font-weight:600;position:relative}
+.mnav [data-m="ask"]::after{content:"";position:absolute;top:6px;left:calc(50% + 9px);width:7px;height:7px;border-radius:50%;background:var(--s3);box-shadow:0 0 0 2px var(--panel)}
 .chat{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);bottom:calc(env(safe-area-inset-bottom,0px) + 8px);right:max(8px,env(safe-area-inset-right,0px));width:min(440px,calc(100% - 16px));z-index:55;background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 16px 50px rgba(0,0,0,.25);display:flex;flex-direction:column;overflow:hidden}
 .chat-h{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
 .chat-h h3{margin:0;font-family:var(--f-head);font-size:15px;flex:1;min-width:0}
@@ -522,6 +542,7 @@ body.exporting .card-h .ib,body.exporting .resize,body.exporting .drill{display:
 body.exporting .card.sel{border-color:var(--line);box-shadow:var(--shadow)}
 @media (max-width:1100px){.work{grid-template-columns:190px minmax(0,1fr) 250px}}
 @media (max-width:1560px){.actions .lbl-txt{display:none}}
+@media (min-width:1100px) and (max-width:1560px){.actions .btn.ask .lbl-txt{display:inline}}
 @media (max-width:900px){
   body{overflow:hidden}
   .work{grid-template-columns:minmax(0,1fr)}
@@ -633,7 +654,7 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
         <button class="btn" id="btnReset" type="button" title="Put the report back the way it was when you opened it" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9"/><path d="M2.5 2v3.5H6"/></svg><span class="lbl-txt">Reset</span></button>
       </div>
       <button class="btn only-narrow" id="btnFields" type="button">Fields</button>
-      <button class="btn ask" id="btnAsk" type="button" title="Ask Sahil about your data, in English or Arabic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/><path d="M5.5 6.5h5M5.5 8.5h3"/></svg><span class="lbl-txt">Ask Sahil</span></button>
+      <button class="btn ask" id="btnAsk" type="button" title="Ask Sahil about your data, in English or Arabic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/><path d="M5.5 6.5h5M5.5 8.5h3"/></svg><span class="lbl-txt">Ask Sahil</span><span class="spark-i" aria-hidden="true">✦</span></button>
       <button class="btn" id="btnForecast" type="button" title="Forecast the months ahead and try what-if changes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 12.5l3.5-4 3 2.5 3-4"/><path d="M11 7l3.5-3" stroke-dasharray="1.6 1.6"/><path d="M1.5 14.5h13"/></svg><span class="lbl-txt">Forecast</span></button>
       <button class="btn" id="btnChanges" type="button" title="What changed since last time"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M8.5 5.5v3l2 1.5"/><path d="M1.5 4.5l2 1 1-2"/></svg><span class="lbl-txt">Changes</span></button>
       <button class="btn" id="btnPlay" type="button" title="Playgrounds: save and open your work"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3l1.5 1.6h5.5c.7 0 1.2.5 1.2 1.2v6.5c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg><span class="lbl-txt">Playground</span></button>
@@ -699,7 +720,7 @@ const store = {
 
 /* Version and build. The secured build (tools/build-secure.mjs) marks itself with <meta name="miyar-build" content="secure">,
    serves every library and font from its own folder, and lists their SHA-384 hashes in #miyar-integrity. */
-const MIYAR_VERSION = '1.5.0';
+const MIYAR_VERSION = '1.5.1';
 const SECURE = document.querySelector('meta[name="miyar-build"]')?.content === 'secure';
 const INTEGRITY = (() => { try { return JSON.parse(document.getElementById('miyar-integrity')?.textContent || '{}'); } catch { return {}; } })();
 const BUILD_LABEL = `Miyar ${MIYAR_VERSION}${SECURE ? ' · secured build' : ''}`;
@@ -2260,7 +2281,7 @@ function renderAll(){
   renderTicker();
   document.body.classList.toggle('nodata', !ds() && !S.pages.some(pg => pg.visuals.length));
   renderReportBtn(); renderTabs();
-  if (!$('#chat').hidden && !CH.busy) renderChat(); renderSelbar(); renderFields(); renderCanvas(); renderBuild(); save();
+  if (!$('#chat').hidden && !CH.busy) renderChat(); renderSelbar(); renderFields(); renderCanvas(); renderBuild(); renderFab(); save();
 }
 function changed(){ renderCanvas(); renderBuild(); renderSelbar(); renderTicker(); save(); }
 
@@ -4712,8 +4733,8 @@ function sahil(q){
       (diff != null ? L(`\n\n**${a.k}** is **${(diff * 100).toFixed(1)}% higher** than ${b.k}.`, `\n\n**${a.k}** أعلى من ${b.k} بنسبة **${(diff * 100).toFixed(1)}%**.`) : '') + selNote,
       chart: {type: 'column', dims: [f], measures: [m], vfilters: [...filters.filter(([x]) => x !== f), [f, vals]], title: `${ML} · ${vals.join(' vs ')}`}};
   }
-  // growth: latest period against the one before
-  if (I.growth && d){
+  // growth: latest period against the one before ("how did it change by month" asks for the trend instead)
+  if (I.growth && d && !(Q.grain && /\b(by|each|every|per|monthly|quarterly|yearly|over)\b|حسب|كل/.test(Q.qn))){
     const g = Q.years.length === 1 ? 'Month' : (new Set(rows.map(r => r[`${d} (Year)`])).size > 1 ? 'Year' : (Q.grain === 'Quarter' ? 'Quarter' : 'Month'));
     const tf = `${d} (${g})`, pts = ranked(rows, tf, m).filter(x => x.k !== '(Blank)').sort((x, y) => labelCmp(x.k, y.k));
     if (pts.length >= 2){
@@ -4799,14 +4820,19 @@ function helpText(ar){
 function Q_years(){ const d = FIELDS.find(f => f.type === 'date')?.name; return d ? [...new Set(ROWS.map(r => r[`${d} (Year)`]).filter(Boolean))].sort() : []; }
 function samplePrompts(){
   const m = MEAS_DEFAULT().f === RECORDS ? 'rows' : MEAS_DEFAULT().f, d = DIM_DEFAULT(), ys = Q_years(), dateF = FIELDS.find(f => f.type === 'date');
-  const en = [`What is the total ${m}?`], ar = [`ما إجمالي ${m}؟`];
-  if (d){ en.push(`Top 5 ${d} by ${m}`); ar.push(`أعلى 5 ${d} حسب ${m}`); }
+  // natural wording: "the overall Attendance %", "Top 5 employees", "Which employee"
+  const md = MEAS_DEFAULT(), whole = m === 'rows' || additive(md) ? 'total' : 'overall';
+  const one = d ? String(shortName(d)).replace(/ name$/i, '').toLowerCase() : '', many = /[^aeiou]y$/.test(one) ? one.slice(0, -1) + 'ies' : /(s|x|ch|sh)$/.test(one) ? one + 'es' : one + 's';
+  const en = [`What is the ${whole} ${m}?`], ar = [`ما إجمالي ${m}؟`];
+  if (d){ en.push(`Top 5 ${many} by ${m}`); ar.push(`أعلى 5 ${d} حسب ${m}`); }
   if (dateF){ en.push(`How did ${m} change by month?`); ar.push(`${m} حسب الشهر`); }
   if (ys.length > 1){ en.push(`Compare ${ys.at(-2)} and ${ys.at(-1)}`); ar.push(`قارن ${ys.at(-2)} و ${ys.at(-1)}`); }
-  if (d){ en.push(`Which ${d} has the lowest ${m}?`); ar.push(`أي ${d} لديه أقل ${m}؟`); }
+  if (d){ en.push(`Which ${one} has the lowest ${m}?`); ar.push(`أي ${d} لديه أقل ${m}؟`); }
   en.push('Summarize this page'); ar.push('لخّص هذه الصفحة');
-  if (d){ en.push(`Show ${m} by ${d} as a chart`); ar.push(`اعرض ${m} حسب ${d} في رسم بياني`); }
-  return {en: en.slice(0, 7), ar: ar.slice(0, 7)};
+  let changed = false; try { changed = !!changesTickerItem(); } catch {}
+  if (changed){ en.push('What changed since last time?'); ar.push('ما الذي تغير منذ آخر مرة؟'); }
+  if (d){ en.push(`Show ${m} by ${one} as a chart`); ar.push(`اعرض ${m} حسب ${d} في رسم بياني`); }
+  return {en: en.slice(0, 8), ar: ar.slice(0, 8)};
 }
 
 /* ---------- light Markdown for answers (input is escaped first) ---------- */
@@ -4839,8 +4865,36 @@ function mdLite(src){
 
 /* ---------- panel ---------- */
 const chatCharts = [];
-function openChat(){ hideTips(); const el = $('#chat'); el.hidden = false; renderChat(); closeDrawers(); setTimeout(() => $('#chatIn')?.focus(), 30); }
-function closeChat(){ $('#chat').hidden = true; chatCharts.splice(0).forEach(c => c.dispose()); }
+function openChat(){ hideTips(); const el = $('#chat'); el.hidden = false; renderChat(); closeDrawers(); renderFab(); setTimeout(() => $('#chatIn')?.focus(), 30); }
+function closeChat(){ $('#chat').hidden = true; chatCharts.splice(0).forEach(c => c.dispose()); renderFab(); }
+/* the bubble in the corner: Ask Sahil with an example question from this report, changing every few seconds */
+const FAB = {on: (() => { try { return localStorage.getItem('miyar-sahil-fab') !== 'off'; } catch { return true; } })(), i: 0, key: ''};
+function fabQs(){ try { const sp = samplePrompts(); return (sp[CH.lang] || sp.en || []).slice(0, 8); } catch { return []; } }
+function renderFab(){
+  let el = $('#sahilFab');
+  if (!el){
+    el = document.createElement('div'); el.id = 'sahilFab'; el.setAttribute('role', 'complementary'); el.setAttribute('aria-label', 'Ask Sahil'); document.body.append(el);
+    el.addEventListener('click', e => {
+      if (e.target.closest('.fab-x')){ FAB.on = false; try { localStorage.setItem('miyar-sahil-fab', 'off'); } catch {} renderFab(); toast('Ask Sahil is still in the toolbar.', 'Undo', () => { FAB.on = true; try { localStorage.removeItem('miyar-sahil-fab'); } catch {} renderFab(); }); return; }
+      const q = e.target.closest('.fab-q')?.dataset.q;
+      openChat(); if (q) chatSend(q);
+    });
+  }
+  const qs = fabQs(), show = FAB.on && !!ds() && ROWS.length > 0 && $('#chat').hidden && innerWidth > 820;
+  el.hidden = !show; if (!show) return;
+  const key = CH.lang + '|' + S.reportId + '|' + qs.join('|');
+  if (key !== FAB.key){ FAB.key = key; FAB.i = 0; }
+  const q = qs[FAB.i % (qs.length || 1)] || '';
+  const ar = CH.lang === 'ar';
+  el.innerHTML = `<button class="fab-main" type="button" title="${ar ? 'اسأل Sahil عن بياناتك' : 'Ask Sahil about your data, in English or Arabic'}"><span class="sahil-av" aria-hidden="true">S</span><span class="fab-t"><b>${ar ? 'اسأل Sahil' : 'Ask Sahil'}</b>${q ? `<span class="fab-q" dir="auto" data-q="${esc(q)}" title="${ar ? 'اسأل هذا السؤال' : 'Ask this'}">“${esc(q)}”</span>` : `<span class="fab-q">${ar ? 'أسئلة عن بياناتك بالعربية أو الإنجليزية' : 'Questions about your data, in English or Arabic'}</span>`}</span></button><button class="fab-x" type="button" aria-label="Hide this" title="Hide this">×</button>`;
+}
+setInterval(() => {
+  const el = $('#sahilFab'), qEl = el && !el.hidden && $('.fab-q[data-q]', el); if (!qEl || document.hidden || el.matches(':hover')) return;
+  const qs = fabQs(); if (qs.length < 2) return;
+  qEl.classList.add('out');
+  setTimeout(() => { FAB.i = (FAB.i + 1) % qs.length; const q = qs[FAB.i]; qEl.dataset.q = q; qEl.textContent = `“${q}”`; qEl.classList.remove('out'); }, 350);
+}, 6000);
+window.addEventListener('resize', () => renderFab());
 function renderChat(){
   const el = $('#chat'); if (el.hidden) return;
   const draft = $('#chatIn')?.value || '';

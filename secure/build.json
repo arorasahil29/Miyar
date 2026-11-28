@@ -1,9 +1,9 @@
 {
   "name": "Miyar",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "flavour": "secured",
-  "sourceCommit": "5dee46d",
-  "contentSecurityPolicy": "default-src 'none'; script-src 'self' 'sha256-LIvtbV6X4uvK2KZ1nEFfNMHBFTn8nd1FykY6ek+wx3g=' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'",
+  "sourceCommit": "c07b899",
+  "contentSecurityPolicy": "default-src 'none'; script-src 'self' 'sha256-MrP6bwtlpp0+LG9YbfPvqBCLiO9za21fVaxdcLonHL0=' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'",
   "libraries": [
     {
       "name": "echarts",
@@ -78,7 +78,7 @@
     {
       "path": "csp.txt",
       "bytes": 307,
-      "sha256": "3e63f15225db1bba58e7e603ff5baef7ba05e5060ea4511950ac3ae98d5c6db4"
+      "sha256": "3b63182d2cc3ee683d76a9d1855118b34443c6fb9398a6c85472c018de0df7dc"
     },
     {
       "path": "fonts/ibm-plex-mono-latin-400-normal.woff2",
@@ -132,8 +132,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 450641,
-      "sha256": "539e937088fa254f9528618ceac3fd67431c5caaf9576de0a36eb3e8cd0c8c2c"
+      "bytes": 456217,
+      "sha256": "8906c790ae7e07e5d4dc7a7c23d62ddc24abc927001db414b8ea5bea953c6716"
     },
     {
       "path": "vendor/echarts-5.4.3.min.js",
