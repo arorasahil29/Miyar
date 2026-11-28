@@ -422,6 +422,7 @@ pre.snip{font-family:var(--f-data);font-size:12px;background:var(--raise);border
 .tk-item .l{color:var(--ink2)}
 .tk-item b{font-family:var(--f-data);font-weight:500;font-variant-numeric:tabular-nums}
 .tk-item .up{color:var(--good);font-weight:600}
+.tk-t b{font-family:var(--f-ui);font-weight:600}.tk-t b.tk-n{font-family:var(--f-data);font-weight:500}.tk-t .n{color:var(--ink3)}
 .tk-item .down{color:var(--bad);font-weight:600}
 .tk-item .n{color:var(--ink3)}
 button.tk-item{cursor:pointer}
@@ -636,7 +637,7 @@ const store = {
 
 /* Version and build. The secured build (tools/build-secure.mjs) marks itself with <meta name="miyar-build" content="secure">,
    serves every library and font from its own folder, and lists their SHA-384 hashes in #miyar-integrity. */
-const MIYAR_VERSION = '1.2.0';
+const MIYAR_VERSION = '1.3.0';
 const SECURE = document.querySelector('meta[name="miyar-build"]')?.content === 'secure';
 const INTEGRITY = (() => { try { return JSON.parse(document.getElementById('miyar-integrity')?.textContent || '{}'); } catch { return {}; } })();
 const BUILD_LABEL = `Miyar ${MIYAR_VERSION}${SECURE ? ' · secured build' : ''}`;
@@ -2187,73 +2188,152 @@ function changed(){ renderCanvas(); renderBuild(); renderSelbar(); renderTicker(
 /* ============================== highlights ticker ==============================
    A scrolling strip of the page's headline numbers, best and worst performers, best month and active filters. */
 const TICK = {on: (() => { try { return localStorage.getItem('miyar-ticker') !== 'off'; } catch { return true; } })(), html: ''};
+/* The highlights strip tells people what the cards do not: who moved most, how recent months compare, streaks and
+   records, leaders and laggards against the average, how concentrated the numbers are, how the current selection
+   compares with everyone, and where the headline figure is heading. Each item is a short sentence. */
 function tickerItems(){
   if (!ds() || !ROWS.length) return [];
-  const rows = globalRows(), items = [];
+  const rows = globalRows();
   let p = page();
   if (p.kind === 'forecast') p = S.pages.find(x => !x.kind && (!x.ds || x.ds === S.active) && x.visuals.length) || p;
-  if (!rows.length) return [{label: 'No rows match the current filters', value: ''}];
-  // headline figures: the page's KPI cards, else its multi-row card, else the first numeric column
+  if (!rows.length) return [{label: 'No rows match the current filters', html: ''}];
+  // the figures this page is about (its KPI cards), and the breakdowns it uses
   let heads = [];
   for (const v of p.visuals){
-    if (v.type === 'kpi' && v.measures[0] && !missingFields(v).length) heads.push({m: v.measures[0], label: v.title || measureLabel(v.measures[0]), trend: v.dims[0], lowerBetter: !!v.lowerBetter});
-    if (v.type === 'multicard' && !missingFields(v).length) v.measures.forEach(m => heads.push({m, label: measureLabel(m)}));
+    if (v.type === 'kpi' && v.measures[0] && !missingFields(v).length) heads.push({m: v.measures[0], label: v.title || measureLabel(v.measures[0]), low: !!v.lowerBetter});
+    if (v.type === 'multicard' && !missingFields(v).length) v.measures.forEach(m => heads.push({m, label: measureLabel(m), low: false}));
   }
   if (!heads.length){
     const num = FIELDS.find(f => f.role === 'measure' && f.src === 'col');
-    heads.push(num ? {m: {f: num.name, agg: 'sum'}, label: `Total ${num.name}`} : {m: {f: RECORDS, agg: 'count'}, label: 'Rows'});
+    heads.push(num ? {m: {f: num.name, agg: 'sum'}, label: num.name, low: false} : {m: {f: RECORDS, agg: 'count'}, label: 'Rows', low: false});
   }
-  const dateCol = FIELDS.find(f => f.type === 'date');
-  heads = heads.filter((h, i) => i === 0 || h.m.f !== RECORDS);   // row counts are shown once, at the end
-  for (const h of heads.slice(0, 4)){
-    const val = measureVal(h.m, rows);
-    const it = {label: h.label, value: fmtVal(val, h.m, Math.abs(val ?? 0) >= 1e5)};
-    const tdim = h.trend && FMAP.has(h.trend) ? h.trend : null;
-    if (tdim){
-      const g = groupRows(rows, r => keyOf(r[tdim]));
-      const ks = [...g.keys()].filter(k => k !== '(Blank)').sort(labelCmp);
-      if (ks.length >= 2){
-        const last = measureVal(h.m, g.get(ks.at(-1))), prev = measureVal(h.m, g.get(ks.at(-2)));
-        if (last != null && prev){
-          const pct = fmtKind(h.m) === 'percent';
-          const ch = pct ? last - prev : (last - prev) / Math.abs(prev);
-          it.delta = {up: ch >= 0, good: (ch >= 0) !== !!h.lowerBetter, text: `${(Math.abs(ch) * 100).toFixed(1)}${pct ? ' pts' : '%'}`, note: `${ks.at(-1)} vs prior`};
-        }
-      }
-    }
-    items.push(it);
-  }
-  // best and worst for the page's main breakdowns
-  const main = heads[0].m;
-  const additive = main.f === RECORDS || (['sum', 'count', 'dcount'].includes(main.agg) && !isCalcMeasure(main.f));
+  heads = heads.filter((h, i, a) => h.m.f !== RECORDS && a.findIndex(x => x.m.f === h.m.f) === i).slice(0, 4);
+  if (!heads.length) heads = [{m: {f: RECORDS, agg: 'count'}, label: 'Rows', low: false}];
   const dims = [];
   for (const v of p.visuals){
-    if (!['bar', 'column', 'stacked', 'stackedbar', 'donut', 'pie', 'treemap', 'funnel', 'waterfall', 'slicer', 'matrix'].includes(v.type) || missingFields(v).length) continue;
-    const d = effective(v).dims?.[0];
-    if (d && FMAP.get(d)?.src !== 'part' && FMAP.get(d)?.type !== 'date' && !dims.includes(d)) dims.push(d);
+    if (!['bar', 'column', 'stacked', 'stackedbar', 'donut', 'pie', 'treemap', 'funnel', 'waterfall', 'slicer', 'matrix', 'table'].includes(v.type) || missingFields(v).length) continue;
+    for (const d of (effective(v).dims || []).slice(0, 1)) if (FMAP.get(d)?.src !== 'part' && FMAP.get(d)?.type !== 'date' && !dims.includes(d)) dims.push(d);
   }
-  if (!dims.length){ const d = FIELDS.find(f => f.role === 'dim' && f.src === 'col' && f.type === 'string'); if (d) dims.push(d.name); }
-  const total = measureVal(main, rows);
+  if (!dims.length){ const d = FIELDS.find(f => f.role === 'dim' && f.src === 'col' && f.type === 'string' && !/(^|\s)(id|code|no)$/i.test(f.name)); if (d) dims.push(d.name); }
+  const date = FIELDS.find(f => f.type === 'date' && f.src === 'col')?.name, mf = date && `${date} (Month)`;
+  const B = s => `<b>${esc(s)}</b>`, N = s => `<b class="tk-n">${esc(s)}</b>`;
+  const lc = s => String(s).replace(/\b([A-Z])([a-z])/g, (_, a, b) => a.toLowerCase() + b);
+  const dimName = d => lc(shortName(d)).replace(/ name$/, '');
+  const plural = w => /[^aeiou]y$/.test(w) ? w.slice(0, -1) + 'ies' : /(s|x|ch|sh)$/.test(w) ? w + 'es' : w + 's';
+  const has = label => /s$/i.test(label) ? 'have' : 'has';
+  const isPct = m => fmtKind(m) === 'percent', add = m => additive(m);
+  const fv = (v, m) => fmtVal(v, m, Math.abs(v ?? 0) >= 1e5);
+  const chg = (a, b, m) => isPct(m) ? {d: b - a, txt: `${(Math.abs(b - a) * 100).toFixed(1)} pts`} : a ? {d: (b - a) / Math.abs(a), txt: `${(Math.abs(b - a) / Math.abs(a) * 100).toFixed(0)}%`} : null;
+  const arrow = (d, low) => `<span class="${Math.abs(d) < 1e-9 ? '' : (d > 0) !== low ? 'up' : 'down'}">${d >= 0 ? '▲' : '▼'}</span>`;
+  const mon = k => MONTHS[+k.slice(5, 7) - 1];
+  const out = [];
+  const push = (rank, label, html, sel) => out.push({rank, label, html, sel});
+  // monthly series for each headline figure
+  const series = h => {
+    if (!mf || !FMAP.has(mf)) return null;
+    const g = groupRows(rows.filter(r => r[mf]), r => r[mf]), ks = [...g.keys()].sort();
+    const lastDay = rows.reduce((a, r) => r[date] && r[date] > a ? r[date] : a, '');
+    if (add(h.m) && ks.length > 3 && +lastDay.slice(8, 10) < 25) ks.pop();   // a month with only some of its days would look like a fall
+    return {ks, g, vals: ks.map(k => measureVal(h.m, g.get(k)))};
+  };
+  const S1 = heads.map(h => ({h, s: series(h)}));
+
+  // 1. how the selection compares with everyone
+  const active = Object.entries(S.sel).filter(([, x]) => x.size);
+  if (active.length && rows.length < ROWS.length){
+    const h = heads[0], mine = measureVal(h.m, rows), all = measureVal(h.m, ROWS);
+    const who = active.map(([f, x]) => x.size <= 3 ? [...x].join(' & ') : `${x.size} ${plural(dimName(f))}`).join(' · ');
+    if (mine != null && all != null){
+      if (add(h.m)) push(0, 'Your selection', `${B(who)} accounts for ${N(all ? (mine / all * 100).toFixed(1) + '%' : '–')} of ${esc(lc(h.label))} (${N(fv(mine, h.m))} of ${fv(all, h.m)})`);
+      else { const c = chg(all, mine, h.m); push(0, 'Your selection', `${esc(h.label)} for ${B(who)} is ${N(fv(mine, h.m))} against ${fv(all, h.m)} for everyone${c && Math.abs(c.d) > 1e-4 ? ` ${arrow(c.d, h.low)} ${esc(c.txt)}` : ''}`); }
+    }
+  }
+  // 2. the last three months against the three before (or this year against the same months last year)
+  for (const {h, s} of S1.slice(0, 2)){
+    if (!s || s.ks.length < 4) continue;
+    const n = s.ks.length, yoy = s.ks.filter(k => s.ks.includes(monthAdd(k, -12)) && k.slice(0, 4) === s.ks.at(-1).slice(0, 4));
+    let a, b, label, note;
+    if (yoy.length >= 2){
+      const cur = yoy.flatMap(k => s.g.get(k)), prev = yoy.flatMap(k => s.g.get(monthAdd(k, -12)) || []);
+      a = measureVal(h.m, prev); b = measureVal(h.m, cur); label = 'Year on year'; note = `${mon(yoy[0])}–${mon(yoy.at(-1))} ${yoy[0].slice(0, 4)} vs a year earlier`;
+    } else if (n >= 6){
+      const last3 = s.ks.slice(-3), prev3 = s.ks.slice(-6, -3);
+      b = measureVal(h.m, last3.flatMap(k => s.g.get(k))); a = measureVal(h.m, prev3.flatMap(k => s.g.get(k)));
+      label = 'Last 3 months'; note = `${mon(last3[0])}–${mon(last3[2])} vs ${mon(prev3[0])}–${mon(prev3[2])}`;
+    } else continue;
+    const c = a != null && b != null && chg(a, b, h.m); if (!c) continue;
+    push(2, label, `${esc(h.label)} ${N(fv(b, h.m))} vs ${fv(a, h.m)} ${arrow(c.d, h.low)} ${esc(c.txt)} <span class="n">${esc(note)}</span>`);
+  }
+  // 3. biggest mover in the last month, by each breakdown
+  const movers = [];
+  if (mf && FMAP.has(mf)) for (const d of dims.slice(0, 2)){
+    let best = null;
+    for (const {h, s} of S1){
+      if (!s || s.ks.length < 2) continue;
+      const [k0, k1] = s.ks.slice(-2), r0 = groupRows(s.g.get(k0), r => keyOf(r[d])), r1 = groupRows(s.g.get(k1), r => keyOf(r[d]));
+      if (r1.size < 2 || r1.size > 60) continue;
+      for (const [k, rs] of r1){
+        const prs = r0.get(k); if (!prs || k === '(Blank)' || rs.length < 5 || prs.length < 5) continue;
+        const a = measureVal(h.m, prs), b = measureVal(h.m, rs); if (a == null || b == null) continue;
+        const c = chg(a, b, h.m); if (!c) continue;
+        if (isPct(h.m) && (rs.length < 12 || prs.length < 12)) continue;
+        // a change has to stand out from ordinary month-to-month noise
+        const score = isPct(h.m) ? Math.abs(b - a) / Math.sqrt(Math.max(1e-4, (a * (1 - a)) / prs.length + (b * (1 - b)) / rs.length))
+          : add(h.m) && a >= 0 && b >= 0 ? Math.abs(b - a) / Math.sqrt(Math.max(1, a + b)) : Math.abs(c.d) * 3;
+        if (score >= 2 && (!best || score > best.score)) best = {score, k, h, a, b, c, k0, k1};
+      }
+    }
+    if (best) movers.push({d, ...best});
+  }
+  movers.sort((a, b) => b.score - a.score).forEach((x, i) => {
+    const small = !isPct(x.h.m) && Math.min(x.a, x.b) < 20, d = x.b - x.a;
+    push(1 + i * 3, 'Biggest change', `${B(x.k)} ${esc(lc(x.h.label))} ${N(fv(x.b, x.h.m))} ${arrow(small ? d : x.c.d, x.h.low)} ${esc(small ? `${d >= 0 ? '+' : '−'}${fv(Math.abs(d), x.h.m)}` : x.c.txt)} <span class="n">in ${mon(x.k1)}, from ${esc(fv(x.a, x.h.m))} in ${mon(x.k0)}</span>`, [x.d, x.k]);
+  });
+  // 4. streaks and records for the headline figures
+  for (const {h, s} of S1){
+    if (!s || s.vals.length < 4) continue;
+    const v = s.vals; let run = 0, dir = 0;
+    for (let i = v.length - 1; i > 0; i--){ const d = Math.sign(v[i] - v[i - 1]); if (!d || (dir && d !== dir)) break; dir = d; run++; }
+    const last = mon(s.ks.at(-1));
+    if (run >= 3) push(4, 'Streak', `${esc(h.label)} ${has(h.label)} ${dir > 0 ? 'risen' : 'fallen'} ${N(run + ' months')} in a row ${arrow(dir, h.low)} <span class="n">to ${esc(fv(v.at(-1), h.m))} in ${last}</span>`);
+    else if (v.length >= 6){
+      const hi = Math.max(...v), lo = Math.min(...v);
+      if (v.at(-1) === hi || v.at(-1) === lo){
+        const top = v.at(-1) === hi;
+        push(4, 'Record', `${last} had the ${B(top ? 'highest' : 'lowest')} ${esc(lc(h.label))} in ${v.length} months: ${N(fv(v.at(-1), h.m))} ${arrow(top ? 1 : -1, h.low)}`);
+      }
+    }
+  }
+  // 5. leaders and laggards against the average
+  const h0 = heads[0];
   for (const d of dims.slice(0, 2)){
-    const g = groupRows(rows, r => keyOf(r[d]));
-    if (g.size < 2 || g.size > 500) continue;
-    const ranked = [...g].map(([k, rs]) => [k, measureVal(main, rs)]).filter(x => x[1] != null).sort((a, b) => b[1] - a[1]);
-    if (ranked.length < 2) continue;
-    const share = v => additive && total ? ` (${(v / total * 100).toFixed(0)}%)` : '';
-    const [tk, tv] = ranked[0], [bk, bv] = ranked.at(-1);
-    items.push({label: `Top ${shortName(d)}`, value: tk, sub: fmtVal(tv, main, true) + share(tv), sel: [d, tk]});
-    if (ranked.length > 2) items.push({label: `Lowest ${shortName(d)}`, value: bk, sub: fmtVal(bv, main, true) + share(bv), sel: [d, bk]});
+    const g = groupRows(rows, r => keyOf(r[d])); g.delete('(Blank)');
+    if (g.size < 3 || g.size > 200) continue;
+    const ranked = [...g].map(([k, rs]) => [k, measureVal(h0.m, rs)]).filter(x => x[1] != null).sort((a, b) => b[1] - a[1]);
+    if (ranked.length < 3) continue;
+    if (isPct(h0.m) && ranked.length <= 12 && ranked.some(x => x[1] <= 0 || x[1] >= 1)) continue;
+    const avg = add(h0.m) ? ranked.reduce((a, x) => a + x[1], 0) / ranked.length : measureVal(h0.m, rows);
+    const vs = val => isPct(h0.m) ? `${((val - avg) * 100 >= 0 ? '+' : '−')}${Math.abs((val - avg) * 100).toFixed(1)} pts vs average` : avg ? `${(val / avg).toFixed(1)}× the average` : '';
+    const [best, worst] = h0.low ? [ranked.at(-1), ranked[0]] : [ranked[0], ranked.at(-1)];
+    const dn = dimName(d);
+    push(5, `Best ${dn}`, `${B(best[0])} ${N(fv(best[1], h0.m))} <span class="n">${esc(lc(h0.label))} · ${esc(vs(best[1]))}</span>`, [d, best[0]]);
+    push(6, `Needs attention`, `${B(worst[0])} ${N(fv(worst[1], h0.m))} <span class="n">${esc(lc(h0.label))} · ${esc(vs(worst[1]))}</span>`, [d, worst[0]]);
   }
-  // best month for the headline figure
-  if (dateCol && FMAP.has(`${dateCol.name} (Month)`)){
-    const mf = `${dateCol.name} (Month)`, g = groupRows(rows, r => keyOf(r[mf]));
-    const ranked = [...g].filter(([k]) => k !== '(Blank)').map(([k, rs]) => [k, measureVal(main, rs)]).filter(x => x[1] != null).sort((a, b) => b[1] - a[1]);
-    if (ranked.length > 1) items.push({label: 'Best month', value: ranked[0][0], sub: fmtVal(ranked[0][1], main, true)});
+  // 6. concentration: how much the top few hold
+  for (const {h} of S1) if (add(h.m)){
+    const d = dims.find(x => { const n = new Set(rows.map(r => r[x])).size; return n >= 8 && n <= 500; }); if (!d) break;
+    const g = groupRows(rows, r => keyOf(r[d])), vals = [...g].map(([k, rs]) => [k, measureVal(h.m, rs) || 0]).sort((a, b) => b[1] - a[1]);
+    const total = vals.reduce((a, x) => a + x[1], 0), top = vals.slice(0, 3).reduce((a, x) => a + x[1], 0);
+    const share = total ? top / total : 0;
+    if (share > 3 / vals.length * 1.4){ push(7, 'Concentration', `3 ${esc(plural(dimName(d)))} hold ${N((share * 100).toFixed(0) + '%')} of ${esc(lc(h.label))} <span class="n">${esc(vals.slice(0, 3).map(x => x[0]).join(', '))}</span>`); break; }
   }
-  const sel = Object.entries(S.sel).filter(([, x]) => x.size);
-  if (sel.length) items.push({label: 'Filtered by', value: sel.map(([f, x]) => `${shortName(f)}: ${[...x].slice(0, 2).join(', ')}${x.size > 2 ? '…' : ''}`).join(' · ')});
-  items.push({label: 'Rows in view', value: rows.length.toLocaleString(), sub: rows.length < ROWS.length ? `of ${ROWS.length.toLocaleString()}` : ''});
-  return items;
+  // 7. where the headline figure is heading
+  if (S1[0].s && S1[0].s.vals.length >= 4){
+    const {h, s} = S1[0], res = fcFit({keys: s.ks, ys: s.vals}, 1, fmtKind(h.m));
+    if (res){ const f = res.fc[0], cur = s.vals.at(-1), c = chg(cur, f.y, h.m);
+      push(8, 'Next month', `${esc(h.label)} forecast ${N(fv(f.y, h.m))}${c && Math.abs(c.d) > 1e-4 ? ` ${arrow(c.d, h.low)} ${esc(c.txt)}` : ''} <span class="n">likely ${esc(fv(f.lo, h.m))}–${esc(fv(f.hi, h.m))}</span>`); }
+  }
+  return out.sort((a, b) => a.rank - b.rank).slice(0, 10);
 }
 let tickRaf = 0;
 function renderTicker(){
@@ -2265,7 +2345,7 @@ function renderTicker(){
     el.hidden = !items.length;
     if (!items.length){ TICK.html = ''; return; }
     const one = items.map(it => {
-      const inner = `<span class="l">${esc(it.label)}</span>${it.value !== '' ? ` <b>${esc(it.value)}</b>` : ''}${it.sub ? ` <span class="n">${esc(it.sub)}</span>` : ''}${it.delta ? ` <span class="${(it.delta.good ?? it.delta.up) ? 'up' : 'down'}">${it.delta.up ? '▲' : '▼'} ${esc(it.delta.text)}</span> <span class="n">${esc(it.delta.note)}</span>` : ''}`;
+      const inner = it.html != null ? `<span class="l">${esc(it.label)}</span>${it.html ? ` <span class="tk-t">${it.html}</span>` : ''}` : `<span class="l">${esc(it.label)}</span>${it.value !== '' ? ` <b>${esc(it.value)}</b>` : ''}${it.sub ? ` <span class="n">${esc(it.sub)}</span>` : ''}${it.delta ? ` <span class="${(it.delta.good ?? it.delta.up) ? 'up' : 'down'}">${it.delta.up ? '▲' : '▼'} ${esc(it.delta.text)}</span> <span class="n">${esc(it.delta.note)}</span>` : ''}`;
       return it.sel ? `<button class="tk-item" type="button" data-tf="${esc(it.sel[0])}" data-tv="${esc(it.sel[1])}" title="Filter the report to ${esc(it.sel[1])}">${inner}</button>` : `<span class="tk-item">${inner}</span>`;
     }).join('');
     if (one === TICK.html) return;
@@ -4080,7 +4160,7 @@ function sahil(q){
   if (I.summary && !Q.measures.length && !Q.dims.length){
     remember({});
     const items = tickerItems();
-    return {text: L('**Here is what stands out on this page:**\n', '**أبرز ما في هذه الصفحة:**\n') + items.map(it => `- ${it.label}: **${it.value}**${it.sub ? ' ' + it.sub : ''}${it.delta ? ` (${it.delta.up ? '▲' : '▼'} ${it.delta.text} ${it.delta.note})` : ''}`).join('\n') + selNote};
+    return {text: L('**Here is what stands out on this page:**\n', '**أبرز ما في هذه الصفحة:**\n') + items.map(it => `- ${it.label}: ${(it.html || '').replace(/<\/?b[^>]*>/g, '**').replace(/<span class="n">([^<]*)<\/span>/g, '($1)').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>')}`).join('\n') + selNote};
   }
   // filter the report
   if (I.filter && filters.length){
