@@ -265,6 +265,9 @@ body.exporting .fc-what{grid-template-columns:260px minmax(0,1fr)!important}
 .chg-list{margin:2px 0 0;padding-left:18px;font-size:12.5px;line-height:1.6}
 .chg-list .up{color:var(--good);font-weight:600}.chg-list .down{color:var(--bad);font-weight:600}
 .chg-empty{padding:18px 4px;font-size:13px}.chg-empty p{margin:0 0 6px}
+.chg-note{margin:0 0 12px;font-size:12.5px;line-height:1.55;color:var(--ink2);border-left:3px solid var(--accent);padding:4px 10px}
+#chgDateWrap{display:none}#chgDateWrap.on{display:inline-flex}
+#chgDate{padding:4px 7px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit}
 .chg-foot{margin:18px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3);line-height:1.5}
 @media (max-width:820px){ .chg-save input{width:120px} }
 /* slicer */
@@ -648,7 +651,7 @@ const store = {
 
 /* Version and build. The secured build (tools/build-secure.mjs) marks itself with <meta name="miyar-build" content="secure">,
    serves every library and font from its own folder, and lists their SHA-384 hashes in #miyar-integrity. */
-const MIYAR_VERSION = '1.4.0';
+const MIYAR_VERSION = '1.4.1';
 const SECURE = document.querySelector('meta[name="miyar-build"]')?.content === 'secure';
 const INTEGRITY = (() => { try { return JSON.parse(document.getElementById('miyar-integrity')?.textContent || '{}'); } catch { return {}; } })();
 const BUILD_LABEL = `Miyar ${MIYAR_VERSION}${SECURE ? ' · secured build' : ''}`;
@@ -3908,7 +3911,7 @@ function autoSnapshot(){
     saveSnapshot(null, true); renderTicker();
   }, 1500);
 }
-const CHG = {timer: 0, cache: null, pick: null};
+const CHG = {timer: 0, cache: null, pick: null, date: null};
 /* the snapshot to compare with by default: the latest from before today, else the oldest */
 function baseline(list){ const before = list.filter(x => dayOf(x.at) !== dayOf(Date.now())); return before[0] || list.at(-1) || null; }
 
@@ -3976,24 +3979,53 @@ function changesTickerItem(){
   return {rank: -1, label: `Since ${shortDay(base.at)}`, html: bits.join(' · ') + ' <span class="n">· see what changed</span>', open: 'changes'};
 }
 
+/* Compare with a calendar date: the snapshot saved on that day (or the latest before it), or, when there is none or
+   people ask for it, the report rebuilt from the rows dated up to that day. */
+const isoDay = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+function dataRange(){ const date = fcDate(); if (!date) return null; let lo = null, hi = null; for (const r of ROWS){ const v = r[date]; if (!v) continue; if (!lo || v < lo) lo = v; if (!hi || v > hi) hi = v; } return lo ? {date, lo: lo.slice(0, 10), hi: hi.slice(0, 10)} : null; }
+function baseForDate(iso, prefer){
+  const end = new Date(iso + 'T23:59:59').getTime();
+  const snap = snapStore.list(S.reportId).find(x => x.at <= end) || null;
+  const rg = dataRange(), dataOk = !!rg && iso >= rg.lo;
+  let use = prefer || (snap ? 'snap' : dataOk ? 'data' : null);
+  if (use === 'snap' && !snap) use = dataOk ? 'data' : null;
+  if (use === 'data' && !dataOk) use = snap ? 'snap' : null;
+  const base = use === 'snap' ? snap : use === 'data'
+    ? {id: 'data:' + iso, at: end, label: null, virtual: true, cut: iso, sets: {[S.active]: snapSet(S.active, r => r[rg.date] && String(r[rg.date]).slice(0, 10) <= iso)}} : null;
+  return {base, use, snap, dataOk, iso, rg};
+}
 function openChanges(){
   if (!ds() || !ROWS.length){ toast('Bring in some data first.'); return; }
-  const list = snapStore.list(S.reportId);
-  const dlg = modal(`<div class="dlg-h"><h3>What changed</h3>
-      <label class="fc-inline">Compared with <select id="chgPick">${list.length ? list.map(x => `<option value="${x.id}">${esc(whenLabel(x.at))}${x.label ? ' · ' + esc(x.label) : x.auto ? ' · automatic' : ''}</option>`).join('') : '<option value="">No snapshots yet</option>'}</select></label>
+  const list = snapStore.list(S.reportId), rg = dataRange();
+  const minDay = [rg?.lo, list.length ? isoDay(list.at(-1).at) : null].filter(Boolean).sort()[0] || '';
+  const dlg = modal(`<div class="dlg-h"><h3 style="white-space:nowrap">What changed</h3>
+      <label class="fc-inline">Compared with <select id="chgPick">${list.map(x => `<option value="${x.id}">${esc(whenLabel(x.at))}${x.label ? ' · ' + esc(x.label) : x.auto ? ' · automatic' : ''}</option>`).join('')}<option value="date">A date I pick…</option></select></label>
+      <label class="fc-inline" id="chgDateWrap">Date <input type="date" id="chgDate" max="${isoDay(Date.now())}" ${minDay ? `min="${minDay}"` : ''} aria-label="Compare with this date"></label>
       <span class="chg-save"><input type="text" id="chgName" maxlength="60" placeholder="Name it (optional)" aria-label="Snapshot name"><button class="btn sm" type="button" id="chgSave" title="Remember how this report looks right now">Save snapshot now</button></span>
       <button class="btn ghost" data-x type="button">Close</button></div><div class="dlg-b" id="chgBody"></div>`);
   dlg.querySelector('[data-x]').onclick = closeModal;
-  const base = list.find(x => x.id === CHG.pick) || baseline(list);
-  if (base) $('#chgPick').value = base.id;
-  const show = () => { const s = snapStore.list(S.reportId).find(x => x.id === $('#chgPick').value); CHG.pick = s?.id || null; $('#chgBody').innerHTML = changesHtml(s); bindChangesBody(); };
-  $('#chgPick').onchange = show;
-  $('#chgSave').onclick = () => {
-    const s = saveSnapshot($('#chgName').value.trim().slice(0, 60), false);
-    toast(s ? 'Snapshot saved. Next time, compare with it to see what changed.' : 'Could not save the snapshot: this browser’s storage is full or blocked.');
-    if (s){ CHG.pick = list.length ? CHG.pick : s.id; openChanges(); }
+  const pick = $('#chgPick'), dateIn = $('#chgDate');
+  const showSnap = () => { const sn = snapStore.list(S.reportId).find(x => x.id === pick.value); CHG.pick = sn?.id || null; CHG.date = null; $('#chgBody').innerHTML = changesHtml(sn); bindChangesBody(); };
+  const showDate = prefer => {
+    const iso = dateIn.value; if (!iso){ $('#chgBody').innerHTML = `<div class="chg-empty"><p><b>Pick a date.</b></p><p class="hint">Miyar compares the report now with how it looked on that day, using the snapshot saved that day or just before it. If there is none, it rebuilds the report from the rows dated up to that day${rg ? ` (the data runs from ${fmtDay(rg.lo)} to ${fmtDay(rg.hi)})` : ''}.</p></div>`; return; }
+    const r = baseForDate(iso, prefer); CHG.date = {iso, use: r.use}; CHG.pick = null; pick.value = 'date';
+    let head = '';
+    if (!r.base) head = `<div class="chg-empty"><p><b>Nothing to compare with on ${fmtDay(iso)}.</b></p><p class="hint">There is no snapshot from that day or before it${rg ? `, and the data only starts on ${fmtDay(rg.lo)}` : ''}. Pick a later date.</p></div>`;
+    else if (r.use === 'snap') head = `<p class="chg-note">Using the snapshot saved <b>${esc(whenLabel(r.snap.at))}</b>${dayOf(r.snap.at) === dayOf(new Date(iso + 'T12:00:00').getTime()) ? ', on that day' : `, the latest one on or before ${fmtDay(iso)}`}: the report as it looked then.${r.dataOk ? ` <button class="linkbtn" type="button" data-chg="use" data-use="data">Compare with the data dated up to ${fmtDay(iso)} instead</button>` : ''}</p>`;
+    else head = `<p class="chg-note">${r.snap ? '' : 'No snapshot was saved on or before that day, so '}Miyar rebuilt the report from the rows dated up to <b>${fmtDay(iso)}</b>. This shows what was added after that date; edits to older rows only show when comparing saved snapshots.${r.snap ? ` <button class="linkbtn" type="button" data-chg="use" data-use="snap">Use the snapshot from ${esc(whenLabel(r.snap.at))} instead</button>` : ''}</p>`;
+    $('#chgBody').innerHTML = head + (r.base ? changesHtml(r.base) : '');
+    bindChangesBody(showDate);
   };
-  show();
+  pick.onchange = () => { if (pick.value === 'date'){ $('#chgDateWrap').classList.add('on'); if (!dateIn.value && rg) dateIn.value = rg.hi < isoDay(Date.now()) ? rg.hi.slice(0, 8) + '01' : ''; dateIn.focus(); showDate(); } else { dateIn.value = ''; showSnap(); } };
+  dateIn.onchange = () => showDate();
+  $('#chgSave').onclick = () => {
+    const sn = saveSnapshot($('#chgName').value.trim().slice(0, 60), false);
+    toast(sn ? 'Snapshot saved. Next time, compare with it to see what changed.' : 'Could not save the snapshot: this browser’s storage is full or blocked.');
+    if (sn){ if (!list.length) CHG.pick = sn.id; openChanges(); }
+  };
+  if (CHG.date){ dateIn.value = CHG.date.iso; showDate(CHG.date.use); return; }
+  const base = list.find(x => x.id === CHG.pick) || baseline(list);
+  if (base){ pick.value = base.id; showSnap(); } else { pick.value = 'date'; showDate(); }
 }
 function changesHtml(snap){
   const note = `<p class="chg-foot">Snapshots keep only the report’s figures (totals, monthly values and per-${'item'} figures), never the rows, and stay in this browser. One is saved automatically the first time you open a report each day; keep up to ${SNAP_MAX}. <button class="linkbtn" type="button" data-chg="clear">Delete all snapshots for this report</button></p>`;
@@ -4001,7 +4033,8 @@ function changesHtml(snap){
   const a = snap.sets[S.active];
   if (!a) return `<p class="hint">That snapshot does not include “${esc(S.active)}”. Pick another one, or save a new snapshot.</p>` + note;
   const d = diffSet(a, snapSet(S.active));
-  const sinceTxt = `${whenLabel(snap.at)}${snap.label ? ` (${esc(snap.label)})` : ''}`;
+  const sinceTxt = snap.virtual ? `the data dated up to ${fmtDay(snap.cut)}` : `${whenLabel(snap.at)}${snap.label ? ` (${esc(snap.label)})` : ''}`;
+  if (snap.virtual) d.revised = d.revised.filter(x => x.ym === snap.cut.slice(0, 7));
   if (d.same && snap.auto && dayOf(snap.at) === dayOf(Date.now())) return `<div class="chg-empty"><p><b>Today’s snapshot was saved when you opened this report.</b></p><p class="hint">From tomorrow, this shows what changed since today. To compare sooner, for example around a data refresh or a meeting, save a snapshot now and come back afterwards.</p></div>` + note;
   if (d.same) return `<div class="chg-empty"><p><b>Nothing has changed since ${sinceTxt}.</b></p><p class="hint">Same rows, same figures. Pick an older snapshot to look further back.</p></div>` + note;
   const H = [];
@@ -4010,7 +4043,7 @@ function changesHtml(snap){
   if (d.rowsNow !== d.rowsThen) lead.push(`<b>${d.rowsNow > d.rowsThen ? '+' : '−'}${Math.abs(d.rowsNow - d.rowsThen).toLocaleString()}</b> rows (${d.rowsThen.toLocaleString()} → ${d.rowsNow.toLocaleString()})`);
   if (d.lastNow !== d.lastThen && d.lastNow) lead.push(`data now runs to <b>${fmtDay(d.lastNow)}</b>, was ${fmtDay(d.lastThen)}`);
   const moved = d.heads.filter(h => !h.flat), flat = d.heads.filter(h => h.flat);
-  H.push(`<div class="fc-sum"><p>Since <b>${sinceTxt}</b>${lead.length ? ': ' + lead.join('; ') : ''}.</p>${moved.length ? `<ul>${moved.map(h => `<li>${esc(h.label)}: ${fmtK(h.then, h.kind)} → <b>${fmtK(h.now, h.kind)}</b> <span class="${chgCls(h.d, h.low)}">${esc(chgTxt(h))}</span></li>`).join('')}${flat.length ? `<li class="hint">No change: ${flat.map(h => `${esc(h.label)} ${fmtK(h.now, h.kind)}`).join(', ')}</li>` : ''}</ul>` : '<p>The headline figures are unchanged.</p>'}</div>`);
+  H.push(`<div class="fc-sum"><p>${snap.virtual ? `Compared with <b>${sinceTxt}</b>` : `Since <b>${sinceTxt}</b>`}${lead.length ? ': ' + lead.join('; ') : ''}.</p>${moved.length ? `<ul>${moved.map(h => `<li>${esc(h.label)}: ${fmtK(h.then, h.kind)} → <b>${fmtK(h.now, h.kind)}</b> <span class="${chgCls(h.d, h.low)}">${esc(chgTxt(h))}</span></li>`).join('')}${flat.length ? `<li class="hint">No change: ${flat.map(h => `${esc(h.label)} ${fmtK(h.now, h.kind)}`).join(', ')}</li>` : ''}</ul>` : '<p>The headline figures are unchanged.</p>'}</div>`);
   // new data by month
   if (d.newMonths.length){
     const yms = [...new Set(d.newMonths.map(x => x.ym))].sort();
@@ -4029,7 +4062,7 @@ function changesHtml(snap){
   }
   // corrections
   if (d.revised.length){
-    H.push(`<div class="fc-sub">Corrections to earlier months <span class="hint">· figures for months that were already in the data</span></div><ul class="chg-list">${d.revised.slice(0, 8).map(x => `<li>${monthLabel(x.ym)} · ${esc(x.h.label)}: ${fmtK(x.then, x.h.kind)} → <b>${fmtK(x.now, x.h.kind)}</b></li>`).join('')}${d.revised.length > 8 ? `<li class="hint">and ${d.revised.length - 8} more</li>` : ''}</ul>`);
+    H.push(snap.virtual ? `<div class="fc-sub">Added later in ${monthLabel(snap.cut.slice(0, 7))} <span class="hint">· after ${fmtDay(snap.cut)}</span></div>` : `<div class="fc-sub">Corrections to earlier months <span class="hint">· figures for months that were already in the data</span></div><ul class="chg-list">${d.revised.slice(0, 8).map(x => `<li>${monthLabel(x.ym)} · ${esc(x.h.label)}: ${fmtK(x.then, x.h.kind)} → <b>${fmtK(x.now, x.h.kind)}</b></li>`).join('')}${d.revised.length > 8 ? `<li class="hint">and ${d.revised.length - 8} more</li>` : ''}</ul>`);
   }
   // new and gone
   if (d.members.length){
@@ -4038,8 +4071,9 @@ function changesHtml(snap){
   return H.join('') + note;
 }
 const lc2 = s => String(s).replace(/\b([A-Z])([a-z])/g, (_, a, b) => a.toLowerCase() + b).replace(/ name$/, '');
-function bindChangesBody(){
+function bindChangesBody(showDate){
   $$('#chgBody [data-chg]').forEach(b => b.onclick = () => {
+    if (b.dataset.chg === 'use' && showDate) return showDate(b.dataset.use);
     if (b.dataset.chg === 'sel'){ closeModal(); S.sel = {[b.dataset.f]: new Set([b.dataset.v])}; renderAll(); toast(`Filtered to ${b.dataset.v}.`); }
     if (b.dataset.chg === 'clear'){
       if (!b.dataset.armed){ b.dataset.armed = '1'; b.textContent = 'Click again to delete all snapshots for this report'; b.classList.add('warn'); return; }
@@ -4048,11 +4082,33 @@ function bindChangesBody(){
   });
 }
 /* plain-text version for Ask Sahil */
-function changesText(ar){
+function sinceDate(q){
+  const MN = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  const rg = dataRange(), yr = (rg?.hi || isoDay(Date.now())).slice(0, 4), iso = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  let m = q.match(/(\d{4})-(\d{2})-(\d{2})/); if (m) return m[0];
+  m = q.toLowerCase().match(/(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?(?:,?\s+(\d{4}))?/);
+  if (m) return iso(m[3] || yr, MN.indexOf(m[2]) + 1, +m[1]);
+  m = q.toLowerCase().match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?/);
+  if (m) return iso(m[3] || yr, MN.indexOf(m[1]) + 1, +m[2]);
+  m = q.toLowerCase().match(/since\s+(?:the\s+)?(?:start of\s+|beginning of\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*(?:\s+(\d{4}))?/);
+  if (m) return iso(m[2] || yr, MN.indexOf(m[1]) + 1, 1);
+  return null;
+}
+function changesText(ar, q = ''){
+  const iso = sinceDate(q);
+  if (iso){
+    const r = baseForDate(iso);
+    if (!r.base) return ar ? `لا توجد بيانات أو لقطة حتى ${fmtDay(iso)} للمقارنة بها.` : `There is nothing to compare with on ${fmtDay(iso)}: no snapshot from then, and the data starts later.`;
+    return changesTextFor(r.base, ar);
+  }
   const list = snapStore.list(S.reportId), base = baseline(list);
   if (!base) return ar ? 'لا توجد لقطة سابقة للمقارنة بعد. يحفظ Miyar لقطة تلقائيًا عند أول فتح للتقرير كل يوم.' : 'There is no earlier snapshot to compare with yet. Miyar saves one automatically the first time you open the report each day, or you can save one from **Changes**.';
+  return changesTextFor(base, ar);
+}
+function changesTextFor(base, ar){
   const a = base.sets[S.active]; if (!a) return ar ? 'اللقطة السابقة لا تشمل هذه البيانات.' : 'The last snapshot does not include this data.';
-  const d = diffSet(a, snapSet(S.active)), since = whenLabel(base.at);
+  const d = diffSet(a, snapSet(S.active)), since = base.virtual ? (ar ? `البيانات حتى ${fmtDay(base.cut)}` : `the data dated up to ${fmtDay(base.cut)}`) : whenLabel(base.at);
+  if (base.virtual) d.revised = [];
   if (d.same) return ar ? `لم يتغير شيء منذ ${since}.` : `Nothing has changed since ${since}.`;
   const L = [ar ? `**ما الذي تغيّر منذ ${since}:**` : `**What changed since ${since}:**`];
   if (d.rowsNow !== d.rowsThen) L.push(`- ${ar ? 'الصفوف' : 'Rows'}: ${d.rowsThen.toLocaleString()} → **${d.rowsNow.toLocaleString()}**${d.lastNow !== d.lastThen ? ` (${ar ? 'البيانات حتى' : 'data now runs to'} ${fmtDay(d.lastNow)})` : ''}`);
@@ -4369,7 +4425,7 @@ function sahil(q){
   const ctx = chat.ctx || {};
   const followUp = /^(and|what about|how about|also|و|وماذا عن|ماذا عن|وكم|وما|طيب)\b/.test(Q.qn) || (!Q.measures.length && !Q.dims.length && (Q.values.length || Q.years.length || Q.months.length));
   if (I.help) return {text: helpText(ar)};
-  if (/\b(what('?s| has| have)? (changed|new)|changes? since|since (last|yesterday|the last)|anything new)\b/i.test(q) || /(ما|ماذا) (الذي )?(تغير|تغيّر)|ما الجديد|منذ آخر/.test(q)) return {text: changesText(ar)};
+  if (/\b(what('?s| has| have)? (changed|new)|changes? since|since (last|yesterday|the last)|anything new)\b/i.test(q) || /(ما|ماذا) (الذي )?(تغير|تغيّر)|ما الجديد|منذ آخر/.test(q)) return {text: changesText(ar, q)};
   if (followUp && ctx.kind){
     if (ctx.kind === 'trend' && !Q.dims.length) I.trend = true;
     if (ctx.kind === 'break' && !Q.dims.length && !I.trend){ I.by = true; if (!I.top && !I.bottom){ I.top = ctx.top; I.bottom = ctx.bottom; } if (!Q.n && ctx.n) Q.n = ctx.n; if (!I.share) I.share = ctx.share; }
@@ -4948,7 +5004,7 @@ function loadReport(r){
   closeModal(); closeMenu(); buildModel(); renderAll();
   if (!HIST.stack.length) commit();
   histButtons(); $('#canvasWrap').scrollTop = 0;
-  CHG.pick = null; autoSnapshot();
+  CHG.pick = null; CHG.date = null; autoSnapshot();
 }
 function switchReport(id){
   if (id === S.reportId) return;
