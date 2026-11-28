@@ -257,6 +257,16 @@ body.exporting .fc-what{grid-template-columns:260px minmax(0,1fr)!important}
   .fc-chart{height:240px}
   .fc-card{padding:12px}
 }
+/* what changed */
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.linkbtn.warn{color:var(--bad);font-weight:600}
+.chg-save{display:inline-flex;gap:6px;align-items:center}
+.chg-save input{width:170px;padding:5px 8px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);color:var(--ink)}
+.chg-list{margin:2px 0 0;padding-left:18px;font-size:12.5px;line-height:1.6}
+.chg-list .up{color:var(--good);font-weight:600}.chg-list .down{color:var(--bad);font-weight:600}
+.chg-empty{padding:18px 4px;font-size:13px}.chg-empty p{margin:0 0 6px}
+.chg-foot{margin:18px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3);line-height:1.5}
+@media (max-width:820px){ .chg-save input{width:120px} }
 /* slicer */
 .slicer{position:absolute;inset:4px 8px 8px;display:flex;flex-direction:column;gap:6px}
 .slicer input[type=search]{padding:4px 8px;border:1px solid var(--line2);border-radius:6px;background:var(--panel)}
@@ -574,6 +584,7 @@ body.exporting .canvas .card{grid-column:span var(--span)!important}
       <button class="btn only-narrow" id="btnFields" type="button">Fields</button>
       <button class="btn ask" id="btnAsk" type="button" title="Ask Sahil about your data, in English or Arabic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/><path d="M5.5 6.5h5M5.5 8.5h3"/></svg><span class="lbl-txt">Ask Sahil</span></button>
       <button class="btn" id="btnForecast" type="button" title="Forecast the months ahead and try what-if changes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 12.5l3.5-4 3 2.5 3-4"/><path d="M11 7l3.5-3" stroke-dasharray="1.6 1.6"/><path d="M1.5 14.5h13"/></svg><span class="lbl-txt">Forecast</span></button>
+      <button class="btn" id="btnChanges" type="button" title="What changed since last time"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M8.5 5.5v3l2 1.5"/><path d="M1.5 4.5l2 1 1-2"/></svg><span class="lbl-txt">Changes</span></button>
       <button class="btn" id="btnPlay" type="button" title="Playgrounds: save and open your work"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3l1.5 1.6h5.5c.7 0 1.2.5 1.2 1.2v6.5c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg><span class="lbl-txt">Playground</span></button>
       <button class="btn" id="btnData" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg><span class="lbl-txt">Data</span></button>
       <button class="btn" id="btnAuto" type="button" title="Generate a starter page from the active dataset"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l1.6 3.9 3.9 1.6-3.9 1.6L8 12.5 6.4 8.6 2.5 7l3.9-1.6z"/></svg><span class="lbl-txt">Auto-build</span></button>
@@ -637,7 +648,7 @@ const store = {
 
 /* Version and build. The secured build (tools/build-secure.mjs) marks itself with <meta name="miyar-build" content="secure">,
    serves every library and font from its own folder, and lists their SHA-384 hashes in #miyar-integrity. */
-const MIYAR_VERSION = '1.3.2';
+const MIYAR_VERSION = '1.4.0';
 const SECURE = document.querySelector('meta[name="miyar-build"]')?.content === 'secure';
 const INTEGRITY = (() => { try { return JSON.parse(document.getElementById('miyar-integrity')?.textContent || '{}'); } catch { return {}; } })();
 const BUILD_LABEL = `Miyar ${MIYAR_VERSION}${SECURE ? ' · secured build' : ''}`;
@@ -859,6 +870,7 @@ function loadAttendanceSample(){
   S.active = ATT_NAME; buildModel();
   S.pages = attendanceReport(); S.pageIdx = 0; S.sel = {}; S.selected = null; S.dt = null;
   const r = curReport(); if (r){ r.name = 'Employee attendance'; renderReportBtn(); }
+  seedAttendanceSnapshot();
   renderAll();
 }
 
@@ -2063,6 +2075,7 @@ function startOver(){
   S.datasets = {}; S.calcs = {}; S.fmt = {}; S.sel = {}; S.dt = null; S.selected = null;
   REPORTS = []; Object.keys(CHATS).forEach(k => delete CHATS[k]);
   try { localStorage.removeItem(LS_KEY); } catch {}
+  snapStore.clear(); CHG.cache = null;
   blankStart();
 }
 function blankStart(){
@@ -2333,6 +2346,7 @@ function tickerItems(){
     if (res){ const f = res.fc[0], cur = s.vals.at(-1), c = chg(cur, f.y, h.m);
       push(8, 'Next month', `${esc(h.label)} forecast ${N(fv(f.y, h.m))}${c && Math.abs(c.d) > 1e-4 ? ` ${arrow(c.d, h.low)} ${esc(c.txt)}` : ''} <span class="n">likely ${esc(fv(f.lo, h.m))}–${esc(fv(f.hi, h.m))}</span>`); }
   }
+  try { const ci = changesTickerItem(); if (ci) out.push(ci); } catch (e){ console.error(e); }
   return out.sort((a, b) => a.rank - b.rank).slice(0, 10);
 }
 let tickRaf = 0;
@@ -2346,6 +2360,7 @@ function renderTicker(){
     if (!items.length){ TICK.html = ''; return; }
     const one = items.map(it => {
       const inner = it.html != null ? `<span class="l">${esc(it.label)}</span>${it.html ? ` <span class="tk-t">${it.html}</span>` : ''}` : `<span class="l">${esc(it.label)}</span>${it.value !== '' ? ` <b>${esc(it.value)}</b>` : ''}${it.sub ? ` <span class="n">${esc(it.sub)}</span>` : ''}${it.delta ? ` <span class="${(it.delta.good ?? it.delta.up) ? 'up' : 'down'}">${it.delta.up ? '▲' : '▼'} ${esc(it.delta.text)}</span> <span class="n">${esc(it.delta.note)}</span>` : ''}`;
+      if (it.open) return `<button class="tk-item" type="button" data-open="${esc(it.open)}" title="See what changed">${inner}</button>`;
       return it.sel ? `<button class="tk-item" type="button" data-tf="${esc(it.sel[0])}" data-tv="${esc(it.sel[1])}" title="Filter the report to ${esc(it.sel[1])}">${inner}</button>` : `<span class="tk-item">${inner}</span>`;
     }).join('');
     if (one === TICK.html) return;
@@ -2357,6 +2372,7 @@ function renderTicker(){
 }
 $('#ticker').addEventListener('click', e => {
   if (e.target.closest('.tk-x')){ setTicker(false); return; }
+  if (e.target.closest('[data-open="changes"]')) return openChanges();
   const b = e.target.closest('[data-tf]'); if (b) toggleSel(b.dataset.tf, b.dataset.tv, false);
 });
 function setTicker(on){
@@ -2597,6 +2613,7 @@ $('#selbar').addEventListener('click', e => {
 $('#btnAdd').onclick = () => { S.selected = null; renderBuild(); openDrawer('buildPane'); addVisual('column'); };
 $('#btnData').onclick = () => openData('table');
 $('#btnForecast').onclick = () => openForecast();
+$('#btnChanges').onclick = () => openChanges();
 $('#btnAuto').onclick = () => { if (!ds()) return openData('import'); autoBuild(); toast(`Added page “${page().name}” built from ${S.active}.`); };
 $('#btnReport').onclick = openReport;
 $('#btnExport').onclick = openExport;
@@ -2608,7 +2625,7 @@ const SI = {
   import: '<path d="M8 10V2m-3.5 3.5L8 2l3.5 3.5M2.5 11v2.5h11V11"/>', auto: '<path d="M8 1.5l1.6 3.9 3.9 1.6-3.9 1.6L8 12.5 6.4 8.6 2.5 7l3.9-1.6z"/>',
   export: '<path d="M8 2v8m-3.5-3.5L8 10l3.5-3.5M2.5 11v2.5h11V11"/>', file: '<path d="M4 1.5h5.5L13 5v9.5H4z M9.5 1.5V5H13"/>',
   theme: '<circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11a5.5 5.5 0 0 0 0-11z" fill="currentColor"/>', rename: '<path d="M2.5 13.5h3l7.5-7.5-3-3-7.5 7.5z"/>',
-  page: '<path d="M4 1.5h8v13H4z"/><path d="M8 5.5v5M5.5 8h5"/>', forecast: '<path d="M1.5 12.5l3.5-4 3 2.5 3-4"/><path d="M11 7l3.5-3" stroke-dasharray="1.6 1.6"/><path d="M1.5 14.5h13"/>',
+  page: '<path d="M4 1.5h8v13H4z"/><path d="M8 5.5v5M5.5 8h5"/>', changes: '<circle cx="8.5" cy="8.5" r="5.5"/><path d="M8.5 5.5v3l2 1.5"/><path d="M1.5 4.5l2 1 1-2"/>', forecast: '<path d="M1.5 12.5l3.5-4 3 2.5 3-4"/><path d="M11 7l3.5-3" stroke-dasharray="1.6 1.6"/><path d="M1.5 14.5h13"/>',
   user: '<circle cx="8" cy="5.5" r="2.8"/><path d="M2.5 14c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/>', logout: '<path d="M6 2.5H3v11h3M10.5 5L13.5 8l-3 3M13.5 8H6"/>', reports: '<rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M2 5.5h12"/>',
 };
 let sheetResetArmed = false;
@@ -2618,7 +2635,7 @@ function openSheet(){
   const canReset = !(HIST.stack[HIST.i] === HIST.stack[0]);
   $('#sheetRoot').innerHTML = `<div class="sheet-bg" data-s="close"></div><div class="sheet" role="dialog" aria-label="More actions"><div class="grab"></div>
     <h4>Edit</h4><div class="g">${it('undo', 'Undo', 'undo', HIST.i <= 0 ? 'disabled' : '')}${it('redo', 'Redo', 'redo', HIST.i >= HIST.stack.length - 1 ? 'disabled' : '')}${it('reset', sheetResetArmed ? 'Tap again to reset' : 'Reset report', 'reset', (canReset ? '' : 'disabled') + (sheetResetArmed ? ' class="it warn"' : ''))}</div>
-    <h4>Data</h4><div class="g">${it('data', 'View data', 'data')}${it('import', 'Import file', 'import')}${it('auto', 'Auto-build page', 'auto')}${it('forecast', 'Forecast & what-if', 'forecast')}</div>
+    <h4>Data</h4><div class="g">${it('data', 'View data', 'data')}${it('import', 'Import file', 'import')}${it('auto', 'Auto-build page', 'auto')}${it('forecast', 'Forecast & what-if', 'forecast')}${it('changes', 'What changed', 'changes')}</div>
     ${SRV.on ? `<h4>Account · ${esc(SRV.me.name || SRV.me.email || '')}</h4><div class="g">${SRV.me.role === 'admin' ? it('users', 'Users & roles', 'user') + it('audit', 'Activity log', 'file') : ''}${it('signout', 'Sign out', 'logout')}</div>` : ''}
     <h4>Report</h4><div class="g">${it('reports', 'Switch report', 'reports')}${it('rename', 'Rename page', 'rename')}${it('addpage', 'Add page', 'page')}${it('export', 'Export PDF / Excel', 'export')}${it('file', 'Report file', 'file')}${it('play', 'Playgrounds', 'reports')}${it('ticker', TICK.on ? 'Hide highlights' : 'Show highlights', 'reports')}${it('theme', 'Theme: ' + {auto: 'Auto', light: 'Light', dark: 'Dark'}[themePref], 'theme')}</div></div>`;
 }
@@ -2639,6 +2656,7 @@ $('#sheetRoot').addEventListener('click', e => {
   if (k === 'import') openData('import');
   if (k === 'auto') $('#btnAuto').click();
   if (k === 'forecast') openForecast();
+  if (k === 'changes') openChanges();
   if (k === 'export') openExport();
   if (k === 'file') openReport();
   if (k === 'reports') openReportsMenu();
@@ -3810,6 +3828,247 @@ function openForecast(){
   S.pageIdx = i; S.selected = null; renderAll();
 }
 
+/* ============================== what changed since last time ==============================
+   Miyar keeps small snapshots of each report's key numbers: its headline figures, their monthly values, and the
+   figures for each value of the report's main breakdowns. Never the rows themselves. One is taken automatically the
+   first time a report is opened each day, and people can save one before a meeting. "What changed" compares the
+   report now with any earlier snapshot: new data, headline figures, biggest moves, where increases came from,
+   corrections to earlier months, and people or items that appeared or disappeared. Snapshots stay in this browser. */
+const SNAP_KEY = 'miyar-snaps-v1', SNAP_MAX = 30;
+const snapStore = {
+  all(){ try { return JSON.parse(localStorage.getItem(SNAP_KEY) || '{}') || {}; } catch { return {}; } },
+  list(rid){ return (this.all()[rid] || []).sort((a, b) => b.at - a.at); },
+  put(rid, list){ const a = this.all(); a[rid] = list; try { localStorage.setItem(SNAP_KEY, JSON.stringify(a)); return true; } catch { return false; } },
+  clear(rid){ const a = this.all(); if (rid) delete a[rid]; try { rid ? localStorage.setItem(SNAP_KEY, JSON.stringify(a)) : localStorage.removeItem(SNAP_KEY); } catch {} },
+};
+const fmtK = (v, k) => v == null || isNaN(v) ? '–' : k === 'percent' ? (v * 100).toFixed(1) + '%' : (v < 0 ? '−' : '') + (k === 'currency' ? '$' : '') + (Math.abs(v) >= 100 || Number.isInteger(v) ? Math.round(Math.abs(v)).toLocaleString('en-US') : (+Math.abs(v).toFixed(2)).toLocaleString('en-US'));
+const dayOf = t => new Date(t).toDateString();
+const whenLabel = t => { const d = new Date(t), today = dayOf(Date.now()) === dayOf(t), yest = dayOf(Date.now() - 864e5) === dayOf(t);
+  return (today ? 'Today' : yest ? 'Yesterday' : d.toLocaleDateString('en-GB', {weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'})) + ', ' + d.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}); };
+const shortDay = t => new Date(t).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'});
+
+/* what a snapshot tracks for one dataset: the figures and breakdowns its pages use */
+function snapPlan(dn){
+  const r = curReport(), pages = S.pages.filter(pg => !pg.kind && (pg.ds || r?.active || S.active) === dn);
+  const heads = [], dims = [];
+  for (const pg of pages) for (const v of pg.visuals){
+    if (missingFields(v).length) continue;
+    if (v.type === 'kpi' && v.measures[0]) heads.push({f: v.measures[0].f, agg: v.measures[0].agg, label: v.title || measureLabel(v.measures[0]), low: !!v.lowerBetter});
+    if (v.type === 'multicard') v.measures.forEach(m => heads.push({f: m.f, agg: m.agg, label: measureLabel(m), low: false}));
+    if (['bar', 'column', 'stacked', 'stackedbar', 'donut', 'pie', 'treemap', 'funnel', 'slicer', 'matrix', 'table'].includes(v.type))
+      for (const d of (v.dims || []).slice(0, 1)) if (FMAP.get(d)?.src !== 'part' && FMAP.get(d)?.type !== 'date' && !dims.includes(d)) dims.push(d);
+  }
+  let hs = heads.filter((h, i) => heads.findIndex(x => x.f === h.f && x.agg === h.agg) === i && FMAP.has(h.f) || h.f === RECORDS).slice(0, 6);
+  if (!hs.length){ const num = FIELDS.find(f => f.role === 'measure' && f.src === 'col'); if (num) hs = [{f: num.name, agg: 'sum', label: num.name, low: false}]; }
+  return {heads: hs, dims: dims.filter(d => FMAP.has(d)).slice(0, 3)};
+}
+function snapSet(dn, keep){
+  const rows = keep ? ROWS.filter(keep) : ROWS, plan = snapPlan(dn), date = fcDate(), mf = date && `${date} (Month)`;
+  const dates = date ? rows.map(r => r[date]).filter(Boolean).sort() : [];
+  const out = {rows: rows.length, first: dates[0] || null, last: dates.at(-1) || null, heads: [], months: {}, dims: {}};
+  const byM = mf ? groupRows(rows.filter(r => r[mf]), r => r[mf]) : null;
+  for (const h of plan.heads){
+    const m = {f: h.f, agg: h.agg}, k = `${h.f}|${h.agg}`;
+    out.heads.push({k, label: h.label, low: h.low, kind: fmtKind(m), add: additive(m), v: measureVal(m, rows)});
+    if (byM) out.months[k] = Object.fromEntries([...byM].map(([ym, rs]) => [ym, measureVal(m, rs)]));
+  }
+  for (const d of plan.dims){
+    const g = groupRows(rows, r => keyOf(r[d])); if (g.size > 300) continue;
+    out.dims[d] = Object.fromEntries([...g].map(([val, rs]) => [val, Object.fromEntries(plan.heads.map(h => [`${h.f}|${h.agg}`, measureVal({f: h.f, agg: h.agg}, rs)]))]));
+  }
+  return out;
+}
+/* the whole report: every dataset its pages use (switching the model briefly when there are several) */
+function snapNow(keep){
+  const r = curReport(), names = [...new Set(S.pages.filter(pg => !pg.kind).map(pg => pg.ds || r?.active || S.active))].filter(n => S.datasets[n]?.rows);
+  const sets = {}, was = S.active;
+  try {
+    for (const n of names){ if (n !== S.active){ S.active = n; buildModel(); } sets[n] = snapSet(n, keep); }
+  } finally { if (S.active !== was){ S.active = was; buildModel(); } }
+  return sets;
+}
+function saveSnapshot(label, auto, at = Date.now(), keep = null){
+  if (!S.reportId || !ds()) return null;
+  const sets = snapNow(keep); if (!Object.keys(sets).length) return null;
+  const snap = {id: uid(), at, label: label || null, auto: !!auto, sets};
+  let list = snapStore.list(S.reportId);
+  list.push(snap); list.sort((a, b) => b.at - a.at);
+  while (list.length > SNAP_MAX){ const i = list.map(x => x.auto).lastIndexOf(true); list.splice(i >= 0 ? i : list.length - 1, 1); }
+  if (!snapStore.put(S.reportId, list)) return null;
+  CHG.cache = null;
+  return snap;
+}
+/* first visit of the day: remember how the report looks now */
+function autoSnapshot(){
+  clearTimeout(CHG.timer);
+  CHG.timer = setTimeout(() => {
+    if (!S.reportId || !ds() || !ROWS.length) return;
+    const list = snapStore.list(S.reportId);
+    if (list.some(x => x.auto && dayOf(x.at) === dayOf(Date.now()))) return;
+    saveSnapshot(null, true); renderTicker();
+  }, 1500);
+}
+const CHG = {timer: 0, cache: null, pick: null};
+/* the snapshot to compare with by default: the latest from before today, else the oldest */
+function baseline(list){ const before = list.filter(x => dayOf(x.at) !== dayOf(Date.now())); return before[0] || list.at(-1) || null; }
+
+function diffSet(a, b){
+  const res = {rowsThen: a.rows, rowsNow: b.rows, lastThen: a.last, lastNow: b.last, heads: [], newMonths: [], revised: [], movers: [], sources: [], members: []};
+  for (const h of b.heads){
+    const o = a.heads.find(x => x.k === h.k); if (!o) continue;
+    res.heads.push({...h, then: o.v, now: h.v, d: h.v != null && o.v != null ? h.v - o.v : null});
+  }
+  const tiny = (h, x, y) => h.kind === 'percent' ? Math.abs(y - x) < 0.0005 : Math.abs(y - x) <= Math.max(1e-9, Math.abs(x) * 0.0005);
+  for (const h of res.heads) h.flat = h.d == null || tiny(h, h.then, h.now);
+  for (const h of res.heads){
+    const ma = a.months[h.k] || {}, mb = b.months[h.k] || {};
+    for (const ym of Object.keys(mb).sort()){
+      if (!(ym in ma)) res.newMonths.push({ym, h, v: mb[ym]});
+      else if (ma[ym] != null && mb[ym] != null && !tiny(h, ma[ym], mb[ym])) res.revised.push({ym, h, then: ma[ym], now: mb[ym]});
+    }
+  }
+  for (const [d, vb] of Object.entries(b.dims)){
+    const va = a.dims[d]; if (!va) continue;
+    const added = Object.keys(vb).filter(k => !(k in va)), gone = Object.keys(va).filter(k => !(k in vb));
+    if (added.length || gone.length) res.members.push({d, added, gone});
+    for (const h of res.heads){
+      const pairs = Object.keys(vb).filter(k => k in va && vb[k][h.k] != null && va[k][h.k] != null).map(k => ({k, then: va[k][h.k], now: vb[k][h.k]}));
+      if (h.kind === 'percent' && !h.add){
+        for (const x of pairs) if (Math.abs(x.now - x.then) >= 0.0025) res.movers.push({d, h, ...x, score: Math.abs(x.now - x.then) * 100});
+      } else if (h.add && h.d){
+        const parts = pairs.map(x => ({...x, delta: x.now - x.then})).filter(x => Math.abs(x.delta) > 1e-9).sort((p, q) => Math.abs(q.delta) - Math.abs(p.delta));
+        const mean = parts.reduce((t, x) => t + Math.abs(x.delta), 0) / (parts.length || 1);
+        if (parts.length && (parts.length <= 3 || Math.abs(parts[0].delta) >= 1.5 * mean || parts.some(x => Math.sign(x.delta) !== Math.sign(h.d)))) res.sources.push({d, h, parts: parts.slice(0, 3), n: parts.length});
+      }
+    }
+  }
+  res.movers.sort((p, q) => q.score - p.score);
+  res.revised.sort((p, q) => Math.abs((q.now - q.then) / (q.then || 1)) - Math.abs((p.now - p.then) / (p.then || 1)));
+  res.same = res.rowsThen === res.rowsNow && res.lastThen === res.lastNow && !res.heads.some(h => h.d != null && !tiny(h, h.then, h.now)) && !res.revised.length && !res.members.length;
+  return res;
+}
+const chgTxt = h => {
+  if (h.d == null) return '';
+  if (h.kind === 'percent' && !h.add) return `${h.d >= 0 ? '▲' : '▼'} ${Math.abs(h.d * 100).toFixed(1)} pts`;
+  const pc = h.then ? ` (${h.d >= 0 ? '+' : '−'}${Math.abs(h.d / h.then * 100).toFixed(h.then && Math.abs(h.d / h.then) < 0.1 ? 1 : 0)}%)` : '';
+  return `${h.d >= 0 ? '+' : '−'}${fmtK(Math.abs(h.d), h.kind)}${pc}`;
+};
+const chgCls = (d, low) => !d || Math.abs(d) < 1e-9 ? '' : (d > 0) !== !!low ? 'up' : 'down';
+const fmtDay = iso => iso ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC'}) : '–';
+
+/* the comparison for the active dataset, cached for the highlights strip */
+function changesFor(snap){
+  const key = [S.reportId, snap?.id, S.active, ROWS.length, JSON.stringify(calcsOut(S.active)), S.pages.length].join('|');
+  if (CHG.cache?.key === key) return CHG.cache.val;
+  const a = snap?.sets?.[S.active];
+  const val = a ? diffSet(a, snapSet(S.active)) : null;
+  CHG.cache = {key, val};
+  return val;
+}
+function changesTickerItem(){
+  if (!S.reportId) return null;
+  const list = snapStore.list(S.reportId), base = baseline(list); if (!base) return null;
+  const d = changesFor(base); if (!d || d.same) return null;
+  const bits = [];
+  if (d.rowsNow !== d.rowsThen) bits.push(`<b class="tk-n">${d.rowsNow > d.rowsThen ? '+' : '−'}${Math.abs(d.rowsNow - d.rowsThen).toLocaleString()}</b> rows`);
+  for (const h of d.heads.filter(h => !h.flat).slice(0, 2)) bits.push(`${esc(h.label)} <span class="${chgCls(h.d, h.low)}">${esc(chgTxt(h))}</span>`);
+  if (!bits.length && d.revised.length) bits.push(`${d.revised.length} earlier month${d.revised.length > 1 ? 's' : ''} revised`);
+  return {rank: -1, label: `Since ${shortDay(base.at)}`, html: bits.join(' · ') + ' <span class="n">· see what changed</span>', open: 'changes'};
+}
+
+function openChanges(){
+  if (!ds() || !ROWS.length){ toast('Bring in some data first.'); return; }
+  const list = snapStore.list(S.reportId);
+  const dlg = modal(`<div class="dlg-h"><h3>What changed</h3>
+      <label class="fc-inline">Compared with <select id="chgPick">${list.length ? list.map(x => `<option value="${x.id}">${esc(whenLabel(x.at))}${x.label ? ' · ' + esc(x.label) : x.auto ? ' · automatic' : ''}</option>`).join('') : '<option value="">No snapshots yet</option>'}</select></label>
+      <span class="chg-save"><input type="text" id="chgName" maxlength="60" placeholder="Name it (optional)" aria-label="Snapshot name"><button class="btn sm" type="button" id="chgSave" title="Remember how this report looks right now">Save snapshot now</button></span>
+      <button class="btn ghost" data-x type="button">Close</button></div><div class="dlg-b" id="chgBody"></div>`);
+  dlg.querySelector('[data-x]').onclick = closeModal;
+  const base = list.find(x => x.id === CHG.pick) || baseline(list);
+  if (base) $('#chgPick').value = base.id;
+  const show = () => { const s = snapStore.list(S.reportId).find(x => x.id === $('#chgPick').value); CHG.pick = s?.id || null; $('#chgBody').innerHTML = changesHtml(s); bindChangesBody(); };
+  $('#chgPick').onchange = show;
+  $('#chgSave').onclick = () => {
+    const s = saveSnapshot($('#chgName').value.trim().slice(0, 60), false);
+    toast(s ? 'Snapshot saved. Next time, compare with it to see what changed.' : 'Could not save the snapshot: this browser’s storage is full or blocked.');
+    if (s){ CHG.pick = list.length ? CHG.pick : s.id; openChanges(); }
+  };
+  show();
+}
+function changesHtml(snap){
+  const note = `<p class="chg-foot">Snapshots keep only the report’s figures (totals, monthly values and per-${'item'} figures), never the rows, and stay in this browser. One is saved automatically the first time you open a report each day; keep up to ${SNAP_MAX}. <button class="linkbtn" type="button" data-chg="clear">Delete all snapshots for this report</button></p>`;
+  if (!snap) return `<div class="chg-empty"><p><b>No snapshot to compare with yet.</b></p><p class="hint">Miyar saves one automatically the first time you open this report each day, so from tomorrow you will see what changed since today. To compare sooner, for example before and after a meeting or a data refresh, click <b>Save snapshot now</b>.</p></div>` + note;
+  const a = snap.sets[S.active];
+  if (!a) return `<p class="hint">That snapshot does not include “${esc(S.active)}”. Pick another one, or save a new snapshot.</p>` + note;
+  const d = diffSet(a, snapSet(S.active));
+  const sinceTxt = `${whenLabel(snap.at)}${snap.label ? ` (${esc(snap.label)})` : ''}`;
+  if (d.same && snap.auto && dayOf(snap.at) === dayOf(Date.now())) return `<div class="chg-empty"><p><b>Today’s snapshot was saved when you opened this report.</b></p><p class="hint">From tomorrow, this shows what changed since today. To compare sooner, for example around a data refresh or a meeting, save a snapshot now and come back afterwards.</p></div>` + note;
+  if (d.same) return `<div class="chg-empty"><p><b>Nothing has changed since ${sinceTxt}.</b></p><p class="hint">Same rows, same figures. Pick an older snapshot to look further back.</p></div>` + note;
+  const H = [];
+  // summary
+  const lead = [];
+  if (d.rowsNow !== d.rowsThen) lead.push(`<b>${d.rowsNow > d.rowsThen ? '+' : '−'}${Math.abs(d.rowsNow - d.rowsThen).toLocaleString()}</b> rows (${d.rowsThen.toLocaleString()} → ${d.rowsNow.toLocaleString()})`);
+  if (d.lastNow !== d.lastThen && d.lastNow) lead.push(`data now runs to <b>${fmtDay(d.lastNow)}</b>, was ${fmtDay(d.lastThen)}`);
+  const moved = d.heads.filter(h => !h.flat), flat = d.heads.filter(h => h.flat);
+  H.push(`<div class="fc-sum"><p>Since <b>${sinceTxt}</b>${lead.length ? ': ' + lead.join('; ') : ''}.</p>${moved.length ? `<ul>${moved.map(h => `<li>${esc(h.label)}: ${fmtK(h.then, h.kind)} → <b>${fmtK(h.now, h.kind)}</b> <span class="${chgCls(h.d, h.low)}">${esc(chgTxt(h))}</span></li>`).join('')}${flat.length ? `<li class="hint">No change: ${flat.map(h => `${esc(h.label)} ${fmtK(h.now, h.kind)}`).join(', ')}</li>` : ''}</ul>` : '<p>The headline figures are unchanged.</p>'}</div>`);
+  // new data by month
+  if (d.newMonths.length){
+    const yms = [...new Set(d.newMonths.map(x => x.ym))].sort();
+    H.push(`<div class="fc-sub">New data · ${yms.map(monthLabel).join(', ')}</div><div class="fc-tbl"><table><thead><tr><th>Figure</th>${yms.map(ym => `<th class="n">${monthLabel(ym)}</th>`).join('')}</tr></thead><tbody>${
+      d.heads.map(h => `<tr><td>${esc(h.label)}</td>${yms.map(ym => { const x = d.newMonths.find(n => n.ym === ym && n.h.k === h.k); return `<td class="n">${x ? fmtK(x.v, h.kind) : '–'}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`);
+  }
+  // biggest moves in rates
+  if (d.movers.length){
+    H.push(`<div class="fc-sub">Biggest moves</div><div class="fc-tbl"><table><thead><tr><th>Who or what</th><th>Figure</th><th class="n">Then</th><th class="n">Now</th><th class="n">Change</th></tr></thead><tbody>${
+      d.movers.slice(0, 8).map(x => `<tr><td><button class="linkbtn" type="button" data-chg="sel" data-f="${esc(x.d)}" data-v="${esc(x.k)}">${esc(x.k)}</button> <small>${esc(lc2(shortName(x.d)))}</small></td><td>${esc(x.h.label)}</td><td class="n">${fmtK(x.then, x.h.kind)}</td><td class="n"><b>${fmtK(x.now, x.h.kind)}</b></td><td class="n"><span class="${chgCls(x.now - x.then, x.h.low)}">${(x.now - x.then) >= 0 ? '▲' : '▼'} ${Math.abs((x.now - x.then) * 100).toFixed(1)} pts</span></td></tr>`).join('')}</tbody></table></div>`);
+  }
+  // where increases came from
+  if (d.sources.length){
+    const seen = new Set(), rows = d.sources.filter(s => { const k = s.h.k; if (seen.has(k + s.d)) return false; seen.add(k + s.d); return true; }).slice(0, 6);
+    H.push(`<div class="fc-sub">Where the change came from</div><ul class="chg-list">${rows.map(s => `<li><b>${esc(s.h.label)}</b> <span class="${chgCls(s.h.d, s.h.low)}">${esc(chgTxt(s.h))}</span>, by ${esc(lc2(shortName(s.d)))}: ${s.parts.map(x => `<button class="linkbtn" type="button" data-chg="sel" data-f="${esc(s.d)}" data-v="${esc(x.k)}">${esc(x.k)}</button> ${x.delta >= 0 ? '+' : '−'}${fmtK(Math.abs(x.delta), s.h.kind)}`).join(', ')}${s.n > 3 ? ` <span class="hint">and ${s.n - 3} more</span>` : ''}</li>`).join('')}</ul>`);
+  }
+  // corrections
+  if (d.revised.length){
+    H.push(`<div class="fc-sub">Corrections to earlier months <span class="hint">· figures for months that were already in the data</span></div><ul class="chg-list">${d.revised.slice(0, 8).map(x => `<li>${monthLabel(x.ym)} · ${esc(x.h.label)}: ${fmtK(x.then, x.h.kind)} → <b>${fmtK(x.now, x.h.kind)}</b></li>`).join('')}${d.revised.length > 8 ? `<li class="hint">and ${d.revised.length - 8} more</li>` : ''}</ul>`);
+  }
+  // new and gone
+  if (d.members.length){
+    H.push(`<div class="fc-sub">New and gone</div><ul class="chg-list">${d.members.map(m => `<li><b>${esc(shortName(m.d))}</b>: ${m.added.length ? `new ${m.added.slice(0, 6).map(esc).join(', ')}${m.added.length > 6 ? ` and ${m.added.length - 6} more` : ''}` : ''}${m.added.length && m.gone.length ? '; ' : ''}${m.gone.length ? `no longer in the data: ${m.gone.slice(0, 6).map(esc).join(', ')}${m.gone.length > 6 ? ` and ${m.gone.length - 6} more` : ''}` : ''}</li>`).join('')}</ul>`);
+  }
+  return H.join('') + note;
+}
+const lc2 = s => String(s).replace(/\b([A-Z])([a-z])/g, (_, a, b) => a.toLowerCase() + b).replace(/ name$/, '');
+function bindChangesBody(){
+  $$('#chgBody [data-chg]').forEach(b => b.onclick = () => {
+    if (b.dataset.chg === 'sel'){ closeModal(); S.sel = {[b.dataset.f]: new Set([b.dataset.v])}; renderAll(); toast(`Filtered to ${b.dataset.v}.`); }
+    if (b.dataset.chg === 'clear'){
+      if (!b.dataset.armed){ b.dataset.armed = '1'; b.textContent = 'Click again to delete all snapshots for this report'; b.classList.add('warn'); return; }
+      snapStore.clear(S.reportId); CHG.cache = null; CHG.pick = null; renderTicker(); openChanges(); toast('Snapshots deleted.');
+    }
+  });
+}
+/* plain-text version for Ask Sahil */
+function changesText(ar){
+  const list = snapStore.list(S.reportId), base = baseline(list);
+  if (!base) return ar ? 'لا توجد لقطة سابقة للمقارنة بعد. يحفظ Miyar لقطة تلقائيًا عند أول فتح للتقرير كل يوم.' : 'There is no earlier snapshot to compare with yet. Miyar saves one automatically the first time you open the report each day, or you can save one from **Changes**.';
+  const a = base.sets[S.active]; if (!a) return ar ? 'اللقطة السابقة لا تشمل هذه البيانات.' : 'The last snapshot does not include this data.';
+  const d = diffSet(a, snapSet(S.active)), since = whenLabel(base.at);
+  if (d.same) return ar ? `لم يتغير شيء منذ ${since}.` : `Nothing has changed since ${since}.`;
+  const L = [ar ? `**ما الذي تغيّر منذ ${since}:**` : `**What changed since ${since}:**`];
+  if (d.rowsNow !== d.rowsThen) L.push(`- ${ar ? 'الصفوف' : 'Rows'}: ${d.rowsThen.toLocaleString()} → **${d.rowsNow.toLocaleString()}**${d.lastNow !== d.lastThen ? ` (${ar ? 'البيانات حتى' : 'data now runs to'} ${fmtDay(d.lastNow)})` : ''}`);
+  for (const h of d.heads.filter(h => !h.flat)) L.push(`- ${h.label}: ${fmtK(h.then, h.kind)} → **${fmtK(h.now, h.kind)}**, ${chgTxt(h)}`);
+  const m = d.movers[0]; if (m) L.push(`- ${ar ? 'أكبر تغيّر' : 'Biggest move'}: **${m.k}** ${m.h.label} ${fmtK(m.then, m.h.kind)} → ${fmtK(m.now, m.h.kind)}`);
+  const s = d.sources[0]; if (s) L.push(`- ${s.h.label} ${chgTxt(s.h)}: ${s.parts.map(x => `${x.k} ${x.delta >= 0 ? '+' : '−'}${fmtK(Math.abs(x.delta), s.h.kind)}`).join(', ')}`);
+  if (d.revised.length) L.push(`- ${ar ? 'تصحيحات لأشهر سابقة' : 'Earlier months revised'}: ${d.revised.length}`);
+  for (const mm of d.members) if (mm.added.length) L.push(`- ${ar ? 'جديد' : 'New'} ${shortName(mm.d)}: ${mm.added.slice(0, 5).join(', ')}`);
+  return L.join('\n');
+}
+/* the attendance sample comes with a snapshot from 1 October, so the comparison has something to show straight away */
+function seedAttendanceSnapshot(){
+  if (!S.reportId || S.active !== ATT_NAME || snapStore.list(S.reportId).length) return;
+  saveSnapshot('Sample: the report on 1 Oct 2026, before October’s data', false, Date.UTC(2026, 9, 1, 6, 0), r => r.Date <= '2026-09-30');
+}
+
 /* ============================== default report ============================== */
 function sampleReport(){
   const pages = sampleReportBase(), d = sampleDetailPage();
@@ -4110,6 +4369,7 @@ function sahil(q){
   const ctx = chat.ctx || {};
   const followUp = /^(and|what about|how about|also|و|وماذا عن|ماذا عن|وكم|وما|طيب)\b/.test(Q.qn) || (!Q.measures.length && !Q.dims.length && (Q.values.length || Q.years.length || Q.months.length));
   if (I.help) return {text: helpText(ar)};
+  if (/\b(what('?s| has| have)? (changed|new)|changes? since|since (last|yesterday|the last)|anything new)\b/i.test(q) || /(ما|ماذا) (الذي )?(تغير|تغيّر)|ما الجديد|منذ آخر/.test(q)) return {text: changesText(ar)};
   if (followUp && ctx.kind){
     if (ctx.kind === 'trend' && !Q.dims.length) I.trend = true;
     if (ctx.kind === 'break' && !Q.dims.length && !I.trend){ I.by = true; if (!I.top && !I.bottom){ I.top = ctx.top; I.bottom = ctx.bottom; } if (!Q.n && ctx.n) Q.n = ctx.n; if (!I.share) I.share = ctx.share; }
@@ -4688,6 +4948,7 @@ function loadReport(r){
   closeModal(); closeMenu(); buildModel(); renderAll();
   if (!HIST.stack.length) commit();
   histButtons(); $('#canvasWrap').scrollTop = 0;
+  CHG.pick = null; autoSnapshot();
 }
 function switchReport(id){
   if (id === S.reportId) return;

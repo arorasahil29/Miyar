@@ -1,6 +1,6 @@
 # Miyar security summary
 
-For IT security and compliance review. Version **1.3.2** (git tag `v1.3.2`; 1.0.0 is commit 317134e).
+For IT security and compliance review. Version **1.4.0** (git tag `v1.4.0`; 1.0.0 is commit 317134e).
 
 ## What to deploy
 
@@ -16,7 +16,8 @@ Use the **secured build** in [`secure/`](secure/). It is the same app as `index.
 ## Where the data goes
 
 - **Imported files** (Excel, CSV, JSON, PDF) are read **inside the browser**. Nothing is uploaded, and nothing is sent to Anthropic, Microsoft or any analytics service. *Ask Sahil* answers questions with code that runs in the page; it is not an online AI service.
-- **Without a server**, reports and data are kept in the browser's local storage (`miyar-v1`) on that computer. That storage is **not encrypted**, and it stays until **Start over** is used or browser data is cleared. Do not use the browser-only mode on shared computers for sensitive data.
+- **Without a server**, reports and data are kept in the browser's local storage (`miyar-v2`) on that computer. That storage is **not encrypted**, and it stays until **Start over** is used or browser data is cleared. Do not use the browser-only mode on shared computers for sensitive data.
+- **What changed snapshots** are kept in the browser's local storage (`miyar-snaps-v1`), with or without a server. They hold only aggregate figures: report totals, monthly values, and figures per breakdown value, which can include names such as employee names with their own figures. They never hold the rows. Up to 30 are kept per report; **Start over** or **Delete all snapshots** removes them.
 - **With Miyar server**, reports are stored in your PostgreSQL database and kept by your own backup and retention rules.
 
 ## Network: what the secured build is allowed to do
@@ -77,12 +78,12 @@ cd secure && sha256sum -c SHA256SUMS
 Every line should end in `OK`. `build.json` records the version, the source commit, the security policy, each library's integrity hash, and the size and SHA-256 of every file. To reproduce the build from source:
 
 ```bash
-git checkout v1.3.2 && cd tools && npm ci && npm run build:secure
+git checkout v1.4.0 && cd tools && npm ci && npm run build:secure
 ```
 
 ## Versions
 
-- Releases are git tags (`v1.0.0`, `v1.1.0`, `v1.2.0`, `v1.3.0`, `v1.3.1`, `v1.3.2`, …).
-- The version shows in the **Report** dialog and on the logo tooltip ("Miyar 1.3.2 · secured build").
+- Releases are git tags (`v1.0.0`, `v1.1.0`, `v1.2.0`, `v1.3.0`, `v1.3.1`, `v1.3.2`, `v1.4.0`, …).
+- The version shows in the **Report** dialog and on the logo tooltip ("Miyar 1.4.0 · secured build").
 - Approve a specific tag and its `SHA256SUMS`. A new version needs a new review.
 - Report security issues privately to the repository owner, not as public issues.
